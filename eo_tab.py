@@ -9,6 +9,7 @@ def eo_tab():
         label='Выбор параметров техмест',
         value='tab_select_parameters',
         children=[
+            dcc.Loading(id='loading', parent_style=loading_style),
             dbc.Row(justify="start",
             children = [
               html.Div([
@@ -33,6 +34,12 @@ def eo_tab():
                 # колонка с фильтрами
                 dbc.Col(width=4,
                   children=[
+                    html.P(),
+                    html.Div([
+                      "EO Класс",
+                      dcc.Dropdown(id="checklist_eo_class", multi=True),
+                  ]),
+                    
                     html.P(),
                     html.Div([
                       "Уровень 1",
@@ -78,7 +85,7 @@ def eo_tab():
                         html.Div(
                             children=[
                                 html.Div(id='code_table'),
-                                dcc.Loading(id='loading', parent_style=loading_style)
+                                # dcc.Loading(id='loading', parent_style=loading_style)
                             ], style={
                                 # 'position': 'relative',
                                 # 'display': 'flex',

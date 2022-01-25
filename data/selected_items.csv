@@ -1,0 +1,27 @@
+,level_no,Код уровня,code,Наименование
+0,1,03,first03,АО Полюс Вернинское
+1,1,05,first05,АО Полюс Магадан
+2,1,11,first11,Олимпиадинский ГОК
+3,2,RUD,RUD,Рудоуправление
+4,2,CTT,CTT,Цех тяжелой техники (Вернинское)
+5,3,BLAG,BLAG,Карьер Благодатный
+6,3,VOST,VOST,Карьер Восточный
+7,3,EKSK,EKSK,Участок экскавации (03-RUD-EKSK)
+8,3,CGTR,CGTR,Цех горнотранспортный (11-RUD-CGTR)
+9,4,UGBL,UGBL,Участок горный к.Благодатный 11-RUD-BLAG-UGBL
+10,4,UGVS,UGVS,Участок горный к.Восточный 11-RUD-VOST-UGVS
+11,0,03-CTT-K150,03-CTT-K150,Самосвалы Komatsu HD1500-8 (Вернинское)
+12,0,03-CTT-C785,03-CTT-C785,Самосвалы CAT 785C (Вернинское)
+13,0,03-CTT-K785,03-CTT-K785,Самосвалы Komatsu HD785-5 (Вернинское)
+14,0,03-CTT-K787,03-CTT-K787,Самосвалы Komatsu HD785-7 (Вернинское)
+15,0,03-RUD-EKSK-OOBR-EXCV,03-RUD-EKSK-OOBR-EXCV,Экскаваторы (Вернинское)
+16,0,11-RUD-CGTR-SEBT-BELZ,11-RUD-CGTR-SEBT-BELZ,Самосвалы БелАЗ-7540 (ОГОК)
+17,0,11-RUD-CGTR-SEBT-C785,11-RUD-CGTR-SEBT-C785,Самосвалы CAT 785C (ОГОК)
+18,0,11-RUD-CGTR-SEBT-C793,11-RUD-CGTR-SEBT-C793,Самосвалы CAT 793D (ОГОК)
+19,0,11-RUD-CGTR-SEBT-C77E,11-RUD-CGTR-SEBT-C77E,Самосвалы CAT 777E (ОГОК)
+20,0,11-RUD-CGTR-SEBT-C77F,11-RUD-CGTR-SEBT-C77F,Самосвалы CAT 777F (ОГОК)
+21,0,11-RUD-BLAG-UGBL-EG10,11-RUD-BLAG-UGBL-EG10,Экскаваторы ЭКГ-10 (ОГОК)
+22,0,11-RUD-BLAG-UGBL-EG18,11-RUD-BLAG-UGBL-EG18,Экскаваторы ЭКГ-18 (ОГОК)
+23,0,11-RUD-BLAG-UGBL-PC36,11-RUD-BLAG-UGBL-PC36,Экскаваторы PC3000-6  (ОГОК)
+24,0,11-RUD-BLAG-UGBL-PC17,11-RUD-BLAG-UGBL-PC17,Экскаваторы PC1250-7  (ОГОК)
+25,0,11-RUD-BLAG-UGBL-PC18,11-RUD-BLAG-UGBL-PC18,Экскаваторы PC1250-8  (ОГОК)
