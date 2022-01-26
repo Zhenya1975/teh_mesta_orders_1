@@ -52,23 +52,23 @@ def eo_tab():
                       dcc.Dropdown(id="checklist_level_2", multi=True),
                   ]),
 
-                  html.P(),
-                    html.Div([
-                      "Уровень 3",
-                      dcc.Dropdown(id="checklist_level_3", multi=True),
-                  ]),
+                  #html.P(),
+                  #  html.Div([
+                  #    "Уровень 3",
+                  #    dcc.Dropdown(id="checklist_level_3", multi=True),
+                  #]),
 
-                  html.P(),
-                    html.Div([
-                      "Уровень 4",
-                      dcc.Dropdown(id="checklist_level_4", multi=True),
-                  ]),
+                  # html.P(),
+                  #  html.Div([
+                  #    "Уровень 4",
+                  #    dcc.Dropdown(id="checklist_level_4", multi=True),
+                  #]),
 
-                  html.P(),
-                    html.Div([
-                      "Уровень 5",
-                      dcc.Dropdown(id="checklist_level_5", multi=True),
-                  ]),
+                  #html.P(),
+                  #  html.Div([
+                  #    "Уровень 5",
+                  #    dcc.Dropdown(id="checklist_level_5", multi=True),
+                  #]),
 
                   html.P(),
                     html.Div([
@@ -84,7 +84,7 @@ def eo_tab():
                         html.P(),
                         html.Div(
                             children=[
-                                html.Div(id='code_table'),
+                                html.Div(id='eo_table'),
                                 # dcc.Loading(id='loading', parent_style=loading_style)
                             ], style={
                                 # 'position': 'relative',
