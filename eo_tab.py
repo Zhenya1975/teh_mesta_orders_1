@@ -12,13 +12,7 @@ def eo_tab():
             dcc.Loading(id='loading', parent_style=loading_style),
             dbc.Row(justify="start",
             children = [
-              html.Div([
-                dbc.Button("Выгрузить список техмест xlsx", id="btn-download", size="sm",
-                                    style={'marginBottom': '3px',
-                                            'marginTop': '3px',
-                                            'backgroundColor': '#232632'},),
-                dcc.Download(id="download-excel")
-              ]),
+              
               html.Div([
                 dbc.Button("Выгрузить список EO xlsx", id="btn-download-eo", size="sm",
                                     style={'marginBottom': '3px',
@@ -34,21 +28,31 @@ def eo_tab():
                 # колонка с фильтрами
                 dbc.Col(width=4,
                   children=[
+                    
+                    html.P(),
+                    html.Div([
+                      "Техместа. Уровень 1",
+                      dcc.Dropdown(id="checklist_level_1", multi=True),
+                  ]),
+
+
+                    html.P(),
+                    html.Div([
+                      "EO Основной Класс",
+                      dcc.Dropdown(id="checklist_main_eo_class", multi=True),
+                  ]),
+                    
                     html.P(),
                     html.Div([
                       "EO Класс",
                       dcc.Dropdown(id="checklist_eo_class", multi=True),
                   ]),
                     
-                    html.P(),
-                    html.Div([
-                      "Уровень 1",
-                      dcc.Dropdown(id="checklist_level_1", multi=True),
-                  ]),
+                    
                     
                     html.P(),
                     html.Div([
-                      "Уровень 2",
+                      "Техместа. Уровень 2",
                       dcc.Dropdown(id="checklist_level_2", multi=True),
                   ]),
 

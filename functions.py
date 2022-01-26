@@ -24,6 +24,42 @@ def eo_class_checklist_data(df):
       eo_class_values.append(row['eo_class_code'])
   return eo_class_checklist_data, eo_class_values
 
+def main_eo_class_checklist_data(df):
+  '''Подготовка данных для чек-листа main_eo_class'''
+  main_eo_class_checklist_data = []
+  main_eo_class_values = []
+  for index, row in df.iterrows():
+      dict_temp = {}
+      dict_temp['label'] = " " + row['main_eo_class_description']
+      dict_temp['value'] = row['main_eo_class_code']
+      main_eo_class_checklist_data.append(dict_temp)
+      main_eo_class_values.append(row['main_eo_class_code'])
+  return main_eo_class_checklist_data, main_eo_class_values
+
+  
+
+
+
+def main_eo_class_prep():
+  full_eo_list = pd.read_csv('data/full_eo_list.csv')
+  main_eo_class_df = full_eo_list.loc[:, ['eo_main_class_code', 'eo_main_class_description']]
+  main_eo_class_df = main_eo_class_df.loc[main_eo_class_df['eo_main_class_code'] != 'no_data']
+  main_eo_class_df = main_eo_class_df.loc[main_eo_class_df['eo_main_class_description'] != 'Не присвоено']
+  
+  result_list = []
+  main_eo_codes = []
+  for index, row in main_eo_class_df.iterrows():
+    temp_dict = {}
+    main_eo_class_code = row['eo_main_class_code']
+    main_eo_class_description = row['eo_main_class_description']
+    if main_eo_class_code not in main_eo_codes:
+      main_eo_codes.append(main_eo_class_code)
+      temp_dict['main_eo_class_code'] = main_eo_class_code
+      temp_dict['main_eo_class_description'] = main_eo_class_description
+      result_list.append(temp_dict)
+  main_eo_class_unique_df = pd.DataFrame(result_list)
+  
+  main_eo_class_unique_df.to_csv('data/main_eo_class.csv')
 
 
 def eo_class_prep():
