@@ -221,7 +221,6 @@ def teh_mesta(
     
     ########### фильтр для таблицы по уровню level_1 ###################
     
-    
     # если в фильтрах level_1 ничего нет, то в таблицу надо отдать все возможные значения
     level_1_all_values = ['first01', 'first05', 'first11']
     
@@ -286,6 +285,10 @@ def teh_mesta(
         style_cell={'textAlign': 'left'},
     )
     
+    eo_class_droplist_options_list = functions.depending_checklists(level_1_table_filter, main_eo_table_filter)
+
+    checklist_eo_class_options = eo_class_droplist_options_list
+
     new_loading_style = loading_style
     return checklist_level_1_values, checklist_level_1_options, checklist_eo_class_values, checklist_eo_class_options, checklist_main_eo_class_values, checklist_main_eo_class_options, eo_table, number_of_rows_text, new_loading_style
 

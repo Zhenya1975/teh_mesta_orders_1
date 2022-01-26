@@ -82,3 +82,21 @@ def eo_class_prep():
   eo_class_unique_df = pd.DataFrame(result_list)
   
   eo_class_unique_df.to_csv('data/eo_class.csv')
+
+def depending_checklists(level_1_table_filter, main_eo_table_filter):
+  # на вход получили списки в level_1 и в main class - те что были приготовлены для фильтрации таблицы
+  # нужно взять таблицу с полным списком eo и получить из нее список кодов eo_class
+  full_eo_df = pd.read_csv('data/full_eo_list.csv')
+  filtered_df = full_eo_df.loc[
+    full_eo_df['level_1'].isin(level_1_table_filter)&
+    full_eo_df['eo_main_class_code'].isin(main_eo_table_filter)
+  ] 
+  eo_class_full_list_df = filtered_df['eo_class_code']
+  eo_class_unique_list_df = pd.DataFrame(set(filtered_df['eo_class_code']), columns=['eo_class_code'])
+  eo_class_list_df = pd.read_csv('data/eo_class.csv')
+  eo_class_df = pd.merge(eo_class_unique_list_df, eo_class_list_df, on = 'eo_class_code', how = 'left')
+  eo_class_df = eo_class_df.loc[:, ['eo_class_code', 'eo_class_description']]
+  eo_class_checklist = eo_class_checklist_data(eo_class_df)[0]
+  return eo_class_checklist
+  
+  
