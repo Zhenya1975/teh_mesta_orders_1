@@ -13,7 +13,7 @@ def settings_tab():
 
                         
                         html.Div([
-                            html.P(),
+                            html.P("дата загрузки файла"),
                             dcc.DatePickerSingle(
                               id='my-date-picker-single',
                               # min_date_allowed=date(1995, 8, 5),
@@ -22,11 +22,11 @@ def settings_tab():
                               date=datetime.datetime.now().date()
                           ),
                             html.P(),
-                            dbc.Button("Выгрузить шаблон фильтров", id="btn_download_template", size="sm",
-                                       style={'marginBottom': '3px',
-                                              'marginTop': '3px',
-                                              'backgroundColor': '#232632'}, ),
-                            dcc.Download(id="download_template")
+                            #dbc.Button("Выгрузить шаблон фильтров", id="btn_download_template", size="sm",
+                            #           style={'marginBottom': '3px',
+                            #                  'marginTop': '3px',
+                            #                  'backgroundColor': '#232632'}, ),
+                            #dcc.Download(id="download_template")
                         ]),
 
                         html.P("Загрузка файла"),

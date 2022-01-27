@@ -257,10 +257,14 @@ def teh_mesta(
         eo_code = row['eo_code']
         eo_description = row['eo_description']
         eo_class_description = row['eo_class_description']
-        temp_dict['Код ЕО'] = eo_code
-        temp_dict['Описание ЕО'] = eo_description
-        temp_dict['Класс ЕО'] = eo_class_description
-        temp_dict['Техместо'] = row['teh_mesto']
+        temp_dict['ЕО код'] = eo_code
+        temp_dict['ЕО описание'] = eo_description
+        temp_dict['Основной Класс ЕО код'] = row['eo_main_class_code']
+        temp_dict['Основной Класс ЕО описание'] = row['eo_main_class_description']
+        temp_dict['Класс ЕО код'] = row['eo_class_code']
+        temp_dict['Класс ЕО описание'] = eo_class_description
+        temp_dict['Техместо код'] = row['teh_mesto']
+        temp_dict['Техместо код'] = row['teh_mesto_description']
 
         table_list.append(temp_dict)
     table_df = pd.DataFrame(table_list)
