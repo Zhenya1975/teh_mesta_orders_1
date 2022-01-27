@@ -7,6 +7,7 @@ from dash_bootstrap_templates import load_figure_template
 import datetime
 import functions
 import eo_tab
+import messages_orders_tab
 import settings_tab
 # import orders_tab
 from dash import dash_table
@@ -74,7 +75,7 @@ app.layout = dbc.Container(
                             # className='custom-tabs-container',
                             children=[
                                 eo_tab.eo_tab(),
-                                # orders_tab.orders_tab(),
+                                messages_orders_tab.messages_orders_tab(),
                                 settings_tab.settings_tab()
 
                                 # tab2(),
@@ -99,6 +100,9 @@ app.layout = dbc.Container(
     Output("checklist_eo_class", "options"),
      Output("checklist_main_eo_class", "value"),
     Output("checklist_main_eo_class", "options"),
+    Output("checklist_level_upper", "value"),
+    Output("checklist_level_upper", "options"),
+
     Output('eo_table', 'children'),
     Output('number_of_rows_text', 'children'),
     Output('loading', 'parent_style')
@@ -109,13 +113,15 @@ app.layout = dbc.Container(
         Input('checklist_level_1', 'value'),
         Input('checklist_eo_class', 'value'),
         Input('checklist_main_eo_class', 'value'),
+        Input('checklist_level_upper', 'value'),
 
     ],
 )
 def teh_mesta(
         checklist_level_1,
         checklist_eo_class,
-        checklist_main_eo_class
+        checklist_main_eo_class,
+        checklist_level_upper
       ):
     # changed_id = [p['prop_id'] for p in callback_context.triggered][0]
     
@@ -124,7 +130,7 @@ def teh_mesta(
     with open('saved_filters.json', 'r') as openfile:
       # Reading from json file
       saved_filters_dict = json.load(openfile)
-
+    
     
     ################## level_1 VALUES ###################################
     if checklist_level_1 == None:
@@ -138,9 +144,21 @@ def teh_mesta(
         json.dump(saved_filters_dict, jsonFile)
     checklist_level_1_values = filter_level_1
     
+    ################## level_upper VALUES ###################################
+    if checklist_level_upper == None:
+      filter_level_upper = saved_filters_dict["level_upper"]
+      
+    else:
+      filter_level_upper = checklist_level_upper
+      saved_filters_dict["level_upper"] = checklist_level_upper
+      # записываем в json
+      with open("saved_filters.json", "w") as jsonFile:
+        json.dump(saved_filters_dict, jsonFile)
+    checklist_level_upper_values = filter_level_upper
+    
     ################## eo_class VALUES ###################################
     if checklist_eo_class == None:
-      filter_eo_class = saved_filters_dict['eo_class']
+      filter_eo_class = saved_filters_dict["eo_class"]
     else:
       filter_eo_class = checklist_eo_class
       saved_filters_dict['eo_class'] = checklist_eo_class
@@ -218,6 +236,37 @@ def teh_mesta(
     else:
       eo_class_table_filter=checklist_eo_class
 
+    ########### фильтр для таблицы по уровню eo_class ###################
+    eo_class_all_values = functions.eo_class_checklist_data(eo_class_df)[1]
+    
+    # Если селект трогали но он пустой, то отдаем полный список
+    if checklist_eo_class != None and len(checklist_eo_class) == 0:
+      eo_class_table_filter = eo_class_all_values
+    # если селект не трогали и в сохраненных ничего нет, то тоже отдаем полный список
+    elif checklist_eo_class == None and len(saved_filters_dict['eo_class']) ==0:
+      eo_class_table_filter = eo_class_all_values
+    elif checklist_eo_class == None and len(saved_filters_dict['eo_class']) !=0:
+      eo_class_table_filter = saved_filters_dict['eo_class']
+
+    else:
+      eo_class_table_filter=checklist_eo_class
+    
+    ########### фильтр для таблицы по уровню level_upper ###################
+    level_upper = pd.read_csv('data/level_upper.csv')
+    level_upper.rename(columns={'teh_mesto': 'level_upper'}, inplace=True)
+    upper_level_all_values = functions.level_upper_checklist_data(level_upper)[1]
+    
+    # Если селект трогали но он пустой, то отдаем полный список
+    if checklist_level_upper != None and len(checklist_level_upper) == 0:
+      level_upper_table_filter = upper_level_all_values
+    # если селект не трогали и в сохраненных ничего нет, то тоже отдаем полный список
+    elif checklist_level_upper == None and len(saved_filters_dict['level_upper']) ==0:
+       level_upper_table_filter = upper_level_all_values
+    elif checklist_level_upper == None and len(saved_filters_dict['level_upper']) !=0:
+      level_upper_table_filter = saved_filters_dict['level_upper']
+
+    else:
+      level_upper_table_filter=checklist_level_upper
     
     ########### фильтр для таблицы по уровню level_1 ###################
     
@@ -246,8 +295,8 @@ def teh_mesta(
     eo_filtered_df = eo_df.loc[
     eo_df['level_1'].isin(level_1_table_filter) &
     eo_df['eo_class_code'].isin(eo_class_table_filter)&
-    eo_df['eo_main_class_code'].isin(main_eo_table_filter)
-    
+    eo_df['eo_main_class_code'].isin(main_eo_table_filter)&
+    eo_df['level_upper'].isin(level_upper_table_filter)    
     ]
     
     
@@ -293,8 +342,12 @@ def teh_mesta(
 
     checklist_eo_class_options = eo_class_droplist_options_list
 
+    level_upper_droplist_option_list = functions.depending_level_upper_checklist(level_1_table_filter, main_eo_table_filter)
+    checklist_level_upper_options = level_upper_droplist_option_list
+
     new_loading_style = loading_style
-    return checklist_level_1_values, checklist_level_1_options, checklist_eo_class_values, checklist_eo_class_options, checklist_main_eo_class_values, checklist_main_eo_class_options, eo_table, number_of_rows_text, new_loading_style
+    
+    return checklist_level_1_values, checklist_level_1_options, checklist_eo_class_values, checklist_eo_class_options, checklist_main_eo_class_values, checklist_main_eo_class_options, checklist_level_upper_values, checklist_level_upper_options, eo_table, number_of_rows_text, new_loading_style
 
 ############# выгрузка списка EO #################
 @app.callback(

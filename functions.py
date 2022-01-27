@@ -91,12 +91,54 @@ def depending_checklists(level_1_table_filter, main_eo_table_filter):
     full_eo_df['level_1'].isin(level_1_table_filter)&
     full_eo_df['eo_main_class_code'].isin(main_eo_table_filter)
   ] 
-  eo_class_full_list_df = filtered_df['eo_class_code']
+  # eo_class_full_list_df = filtered_df['eo_class_code']
   eo_class_unique_list_df = pd.DataFrame(set(filtered_df['eo_class_code']), columns=['eo_class_code'])
   eo_class_list_df = pd.read_csv('data/eo_class.csv')
   eo_class_df = pd.merge(eo_class_unique_list_df, eo_class_list_df, on = 'eo_class_code', how = 'left')
   eo_class_df = eo_class_df.loc[:, ['eo_class_code', 'eo_class_description']]
   eo_class_checklist = eo_class_checklist_data(eo_class_df)[0]
   return eo_class_checklist
+
+
+def level_upper_checklist_data(df):
+  '''Подготовка данных для чек-листа level_upper'''
+  level_upper_checklist_data = []
+  level_upper_values = []
+  for index, row in df.iterrows():
+      dict_temp = {}
+      dict_temp['label'] = " " + row['Название технического места']
+      dict_temp['value'] = row['level_upper']
+      level_upper_checklist_data.append(dict_temp)
+      level_upper_values.append(row['level_upper'])
+  return level_upper_checklist_data, level_upper_values
+
+
+
+def depending_level_upper_checklist(level_1_table_filter, main_eo_table_filter):
+  full_eo_df = pd.read_csv('data/full_eo_list.csv')
+  filtered_df = full_eo_df.loc[
+    full_eo_df['level_1'].isin(level_1_table_filter)&
+    full_eo_df['eo_main_class_code'].isin(main_eo_table_filter)
+  ]
   
+  level_upper_unique_list_df = pd.DataFrame(set(filtered_df['level_upper']), columns=['teh_mesto'])
+  level_upper_list_df = pd.read_csv('data/level_upper.csv')
+  level_upper_df = pd.merge(level_upper_unique_list_df, level_upper_list_df, on='teh_mesto', how = 'left')
+  level_upper_df = level_upper_df.loc[:, ['teh_mesto', 'Название технического места']]
+  level_upper_df.rename(columns={'teh_mesto': 'level_upper'}, inplace=True)
+  level_upper_checklist = level_upper_checklist_data(level_upper_df)[0]
+  return level_upper_checklist
+ 
+
+
+def level_upper_prep():
+  teh_mesta_full_list = pd.read_csv('data/teh_mesta_full_list.csv')
+  level_upper_full_list_df = teh_mesta_full_list.loc[:, ['level_upper']]
+
+  level_upper_unique_df = pd.DataFrame(set(level_upper_full_list_df['level_upper']), columns=['teh_mesto'])
+  level_upper_unique_df = level_upper_unique_df.loc[level_upper_unique_df['teh_mesto'] != 'no_data']
+  level_upper_df = pd.merge(level_upper_unique_df, teh_mesta_full_list, on = 'teh_mesto', how = 'left')
+  level_upper_df = level_upper_df.loc[:, ['teh_mesto', 'Название технического места']]
+  level_upper_df.to_csv('data/level_upper.csv')
   
+

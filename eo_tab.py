@@ -26,7 +26,7 @@ def eo_tab():
 
             dbc.Row([
                 # колонка с фильтрами
-                dbc.Col(width=4,
+                dbc.Col(width=3,
                   children=[
                     
                     html.P(),
@@ -81,7 +81,7 @@ def eo_tab():
                   ]),
                   ]
                 ),
-                dbc.Col(width=8,
+                dbc.Col(width=9,
                     children=[
                         html.P(id='number_of_rows_text'),
                         
