@@ -16,6 +16,7 @@ from dash import dash_table
 import base64
 import io
 import json
+import plotly.graph_objects as go
 # import plotly.graph_objects as go
 # import result_df_prep
 # import clean_messages_raw_file
@@ -491,7 +492,8 @@ def orders_messages_tab(checklist_basis_start_month_year):
 @app.callback([
     Output("checklist_basis_start_date_orders_moved_tab", "value"),
     Output("checklist_basis_start_date_orders_moved_tab", "options"),
-    Output('loading_orders_moved_tab', 'parent_style')
+    Output('loading_orders_moved_tab', 'parent_style'),
+    Output('orders_moved_from_jan', 'figure')
 ],
 
     [
@@ -530,7 +532,36 @@ def orders_moved_tab(checklist_basis_start_date_orders_moved_tab):
 
   orders_moved_new_loading_style = loading_style
 
-  return checklist_month_year_2022_orders_moved_tab_values, checklist_orders_moved_tab_month_year_2022_options, orders_moved_new_loading_style
+  x = ['январь', 'февраль', 'март', 'апрель']
+  y1 = [20, 0, 0, 0]
+  y2 = [12, 0, 0, 0]
+  y3 = [0, 3, 2, 7]
+
+  fig = go.Figure()
+  fig = go.Figure(data=[
+    go.Bar(name='Запланированные на январь и оставшиеся в январе', x=x, y=y1, marker_color='green', text=y1,textposition='auto',),
+    go.Bar(name='Перенесенные с января', x=x, y=y2, marker_color='red', text=y2,textposition='auto'),
+    go.Bar(name='Перенесенные с января', x=x, y=y3, marker_color='#ffcccb', text=y3, textposition='auto')
+  ])
+
+
+  fig.update_layout(
+      barmode='stack',
+      yaxis = {'range':[0, 50]},
+      legend=dict(
+          orientation="h",
+          yanchor="bottom",
+          y=1.02,
+          xanchor="right",
+          x=1
+      )
+      
+      # template=graph_template,
+      # xaxis={'range': [start_quarter_date, finish_quarter_date]},
+      # title='Завершено: {}<br><sup>c {} по {}</sup> '.format(fact_at_current_date, start_date, finish_date),
+  )
+
+  return checklist_month_year_2022_orders_moved_tab_values, checklist_orders_moved_tab_month_year_2022_options, orders_moved_new_loading_style, fig
 
 
 

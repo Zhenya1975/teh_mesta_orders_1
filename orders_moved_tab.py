@@ -93,7 +93,8 @@ def orders_moved_tab():
                       html.P('Выборка: "arm_planir_new_plan_date_2.csv" группа: Самосвалы карьерные HD1500-8 в "03. Полюс Вернинское" из АРМ Планировщик с данными от 31.01.2022'),
                       html.P(),
                       html.P(id='total_number_of_orders_in_january'), # Общее количество заказов, которые были запланированы в январе
-                     
+                      html.P(),
+                      html.Div(dcc.Graph(id="orders_moved_from_jan", config={'displayModeBar': False}), className="m-4"),
                         
 
 
