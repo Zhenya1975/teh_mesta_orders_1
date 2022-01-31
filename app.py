@@ -8,6 +8,8 @@ import datetime
 import functions
 import eo_tab
 import messages_orders_tab
+import messages_orders
+import orders_moved_tab
 import settings_tab
 # import orders_tab
 from dash import dash_table
@@ -76,6 +78,7 @@ app.layout = dbc.Container(
                             children=[
                                 eo_tab.eo_tab(),
                                 messages_orders_tab.messages_orders_tab(),
+                                orders_moved_tab.orders_moved_tab(),
                                 settings_tab.settings_tab()
 
                                 # tab2(),
@@ -286,20 +289,20 @@ def teh_mesta(
     
     ########### таблица с оборудованием ###################
     # отфильтровываем таблицу значениями из селектов
-    # print("level_1_table_filter", level_1_table_filter)
-    # print("main_eo_table_filter", main_eo_table_filter)
-    # print("eo_class_table_filter", eo_class_table_filter)
 
     eo_df = pd.read_csv('data/full_eo_list.csv', dtype = str)
-    
-    eo_filtered_df = eo_df.loc[
+    eo_upper_level_df = pd.merge(eo_df, level_upper, on='level_upper', how='left')
+
+    eo_filtered_df = eo_upper_level_df.loc[
     eo_df['level_1'].isin(level_1_table_filter) &
     eo_df['eo_class_code'].isin(eo_class_table_filter)&
     eo_df['eo_main_class_code'].isin(main_eo_table_filter)&
     eo_df['level_upper'].isin(level_upper_table_filter)    
     ]
     
-    
+
+
+
     table_list = []
     for index,row in eo_filtered_df.iterrows():
         temp_dict = {}
@@ -310,10 +313,11 @@ def teh_mesta(
         temp_dict['ЕО описание'] = eo_description
         temp_dict['Основной Класс ЕО код'] = row['eo_main_class_code']
         temp_dict['Основной Класс ЕО описание'] = row['eo_main_class_description']
-        temp_dict['Класс ЕО код'] = row['eo_class_code']
-        temp_dict['Класс ЕО описание'] = eo_class_description
+        temp_dict['Класс ЕО'] = row['eo_class_code'] + "; " + eo_class_description
         temp_dict['Техместо код'] = row['teh_mesto']
-        temp_dict['Техместо код'] = row['teh_mesto_description']
+        temp_dict['Техместо описание'] = row['teh_mesto_description']
+        temp_dict['Вышестоящее техместо'] = row['level_upper'] + "; " + row['Название технического места']
+       
 
         table_list.append(temp_dict)
     table_df = pd.DataFrame(table_list)
@@ -324,9 +328,10 @@ def teh_mesta(
 
     eo_table = dash_table.DataTable(
         # id='table',
+        # editable=True,
         columns=[{"name": i, "id": i} for i in table_df.columns],
         data=table_df.to_dict('records'),
-        filter_action='native',
+        # filter_action='native',
         style_header={
             # 'backgroundColor': 'white',
             'fontWeight': 'bold'
@@ -358,6 +363,178 @@ def funct(n_clicks_eo):
     if n_clicks_eo:
         df = pd.read_csv('data/eo_table.csv', dtype=str)
         return dcc.send_data_frame(df.to_excel, "список_ео.xlsx", index=False, sheet_name="список_ео")
+
+
+
+@app.callback([
+    Output("checklist_basis_start_month_year", "value"),
+    Output("checklist_basis_start_month_year", "options"),
+    Output('orders_table', 'children'),
+    Output('number_of_rows_text_orders', 'children'),
+    Output('loading_messages_orders_tab', 'parent_style')
+],
+
+    [
+        Input('checklist_basis_start_month_year', 'value'),
+
+    ],
+)
+def orders_messages_tab(checklist_basis_start_month_year):
+  with open('saved_filters_messages_orders.json', 'r') as openfile:
+      # Reading from json file
+      saved_filters_messages_orders_dict = json.load(openfile)
+  ########### фильтр для таблицы заказов по фильтру "месяц и год в поле Базисный срок начала" ###################
+    
+  # если в фильтрах ничего нет, то в таблицу надо отдать все возможные значения
+  basis_start_date_all_values = messages_orders.order_data_prepare()[2]
+  
+  # Список чек-боксов Level_1
+  month_year_2022_df = pd.read_csv('data/month_year_2022.csv')
+  checklist_month_year_2022_options = functions.month_year_2022_checklist_data(month_year_2022_df)[0]
+  
+  ################## month_year_2022 VALUES ###################################
+  if checklist_basis_start_month_year == None:
+    filter_month_year_2022 = saved_filters_messages_orders_dict['basis_start_date_month_year']
+  else:
+    filter_month_year_2022 = checklist_basis_start_month_year
+    saved_filters_messages_orders_dict['basis_start_date_month_year'] = checklist_basis_start_month_year
+    
+  # записываем в json
+  with open("saved_filters_messages_orders.json", "w") as jsonFile:
+    json.dump(saved_filters_messages_orders_dict, jsonFile)
+  
+  # присваиваем значения фильтра в output функции
+  checklist_month_year_2022_values = filter_month_year_2022
+
+
+
+  # Если селект не трогали и нет сохраненных фильтров, то отдаем полный список
+  # print('длина в сохраненном фильтре', len(saved_filters_messages_orders_dict['basis_start_date_month_year']))
+  # print('checklist_basis_start_month_year', checklist_basis_start_month_year)
+  if checklist_basis_start_month_year != None and len(checklist_basis_start_month_year)==0:
+    # print("первый")
+    basis_start_month_date_table_filter = basis_start_date_all_values
+  elif checklist_basis_start_month_year == None and len(saved_filters_messages_orders_dict['basis_start_date_month_year']) ==0:
+    # print("второй")
+    basis_start_month_date_table_filter = basis_start_date_all_values
+  elif checklist_basis_start_month_year == None and len(saved_filters_messages_orders_dict['basis_start_date_month_year']) !=0:
+    # print("третий")
+    basis_start_month_date_table_filter = saved_filters_messages_orders_dict['basis_start_date_month_year']
+  else:
+    # print("четвертый")
+    basis_start_month_date_table_filter = checklist_basis_start_month_year
+
+  # print("basis_start_month_date_table_filter", basis_start_month_date_table_filter)
+  ############ Фильтруем таблицу с заказами ###############
+  orders_df = messages_orders.order_data_prepare()[0]
+  # print(basis_start_month_date_table_filter)
+  orders_filtered_df = orders_df.loc[
+  orders_df['basis_start_month_year'].isin(basis_start_month_date_table_filter)
+    ]
+
+  ######### подготовка таблицы для вывода ######################
+  table_list = []
+  for index,row in orders_filtered_df.iterrows():
+    temp_dict = {}
+    order_id = row['Заказ']
+    basis_start_date = row['БазисСрокНачала']
+    plan_date = row['Плановая дата']
+    order_user_status = row['ПользСтатус']
+    order_system_status = row['СистСтатус']
+    tk_downtime_total = row['ОбщееВремяПростояТК']
+    order_description = row['Краткий текст']
+    message_system_status = row['СистСтатСообщТОРО']
+    eo_id = row['Ед. оборудов.']
+    teh_mesto_id = row['Техместо']
+    spp_order_title = row['СПП-ЗаголЗаказа']
+
+    temp_dict['Заказ'] = order_id
+    temp_dict['БазисСрокНачала'] = basis_start_date
+    temp_dict['Плановая дата'] = plan_date
+    temp_dict['ПользСтатус (заказа)'] = order_user_status
+    temp_dict['СистСтатус'] = order_system_status
+    temp_dict['ОбщееВремяПростояТК'] = tk_downtime_total
+    temp_dict['Краткий текст'] = order_description
+    temp_dict['СистСтатСообщТОРО'] = message_system_status
+    temp_dict['ЕО; teh_mesto; СПП-ЗаголЗаказа'] = str(eo_id) + "\n" + str(teh_mesto_id) + "\n" + str(spp_order_title)
+
+
+    table_list.append(temp_dict)
+  order_table_df = pd.DataFrame(table_list)
+  order_table_df.to_csv('data/order_table_df.csv')
+  number_of_rows = len(order_table_df)
+  number_of_rows_text_orders = 'Количество записей: {}'.format(number_of_rows)
+
+
+  orders_table = dash_table.DataTable(
+        # id='table',
+        columns=[{"name": i, "id": i} for i in order_table_df.columns],
+        data=order_table_df.to_dict('records'),
+        # filter_action='native',
+        style_header={
+            # 'backgroundColor': 'white',
+            'fontWeight': 'bold'
+        },
+        style_data={
+            'whiteSpace': 'normal',
+            'height': 'auto',
+        },
+        style_cell={'textAlign': 'left'},
+    )
+
+  orders_new_loading_style = loading_style
+
+  return checklist_month_year_2022_values, checklist_month_year_2022_options, orders_table, number_of_rows_text_orders, orders_new_loading_style
+
+
+############# Обработчик вкладки Переносы заказов ########################
+@app.callback([
+    Output("checklist_basis_start_date_orders_moved_tab", "value"),
+    Output("checklist_basis_start_date_orders_moved_tab", "options"),
+    Output('loading_orders_moved_tab', 'parent_style')
+],
+
+    [
+        Input('checklist_basis_start_date_orders_moved_tab', 'value'),
+
+    ],
+)
+def orders_moved_tab(checklist_basis_start_date_orders_moved_tab):
+  with open('saved_filters_orders_moved.json', 'r') as openfile:
+      # Reading from json file
+      saved_filters_orders_moved_dict = json.load(openfile)
+  ########### фильтр для таблицы заказов по фильтру "месяц и год в поле Базисный срок начала" ###################
+    
+  # если в фильтрах ничего нет, то в таблицу надо отдать все возможные значения
+  # basis_start_date_all_values = messages_orders.order_data_prepare()[2]
+  
+  
+  month_year_2022_df = pd.read_csv('data/month_year_2022.csv')
+  checklist_orders_moved_tab_month_year_2022_options = functions.month_year_2022_checklist_data(month_year_2022_df)[0]
+  
+  ################## month_year_2022 VALUES ###################################
+  if checklist_basis_start_date_orders_moved_tab == None:
+    filter_month_year_2022_orders_moved_tab = saved_filters_orders_moved_dict['target_period_month_year']
+  else:
+    filter_month_year_2022_orders_moved_tab = checklist_basis_start_date_orders_moved_tab
+    saved_filters_orders_moved_dict['target_period_month_year'] = checklist_basis_start_date_orders_moved_tab
+    
+  # записываем в json
+  with open("saved_filters_orders_moved.json", "w") as jsonFile:
+    json.dump(saved_filters_orders_moved_dict, jsonFile)
+  
+  # присваиваем значения фильтра в output функции
+  checklist_month_year_2022_orders_moved_tab_values = filter_month_year_2022_orders_moved_tab
+
+
+
+  orders_moved_new_loading_style = loading_style
+
+  return checklist_month_year_2022_orders_moved_tab_values, checklist_orders_moved_tab_month_year_2022_options, orders_moved_new_loading_style
+
+
+
+
 
 
 

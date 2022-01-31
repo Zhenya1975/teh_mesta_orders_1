@@ -12,6 +12,19 @@ def level_checklist_data(df):
       level_1_values.append(row['code'])
   return level_1_checklist_data, level_1_values
 
+def month_year_2022_checklist_data(df):
+  '''Подготовка данных для чек-листа month_year_2022'''
+  month_year_2022_checklist_data = []
+  month_year_2022_values = []
+  for index, row in df.iterrows():
+      dict_temp = {}
+      dict_temp['label'] = " " + row['month_year_description']
+      dict_temp['value'] = row['month_year_code']
+      month_year_2022_checklist_data.append(dict_temp)
+      month_year_2022_values.append(row['month_year_code'])
+  return month_year_2022_checklist_data, month_year_2022_values
+
+
 def eo_class_checklist_data(df):
   '''Подготовка данных для чек-листа eo_class'''
   eo_class_checklist_data = []
@@ -140,5 +153,5 @@ def level_upper_prep():
   level_upper_df = pd.merge(level_upper_unique_df, teh_mesta_full_list, on = 'teh_mesto', how = 'left')
   level_upper_df = level_upper_df.loc[:, ['teh_mesto', 'Название технического места']]
   level_upper_df.to_csv('data/level_upper.csv')
-  
+level_upper_prep()
 

@@ -4,12 +4,12 @@ loading_style = {
     # 'position': 'absolute',
     # 'align-self': 'center'
                  }
-def messages_orders_tab():
-    messages_orders_tab_block = dcc.Tab(
-        label='Сообщения. Заказы',
-        value='tab_messages_orders',
+def orders_moved_tab():
+    orders_moved_tab_block = dcc.Tab(
+        label='Заказы. Переносы',
+        value='tab_orders_moved',
         children=[
-            dcc.Loading(id='loading_messages_orders_tab', parent_style=loading_style),
+            dcc.Loading(id='loading_orders_moved_tab', parent_style=loading_style),
             dbc.Row([
               # колонка с фильтрами
                 dbc.Col(width=3,
@@ -20,14 +20,11 @@ def messages_orders_tab():
                             dbc.AccordionItem(
                                 [
                                  html.P(),
+                                    html.P(),
                                     html.Div([
-                                      "Базисный срок начала, месяц-год",
-                                      dcc.Dropdown(
-                                        id="checklist_basis_start_month_year", 
-                                        multi=True,
-                                        
-                                        ),
-                                  ]),   
+                                      "Базисный срок начала. Месяц, год",
+                                      dcc.Dropdown(id="checklist_basis_start_date_orders_moved_tab", multi=True),
+                                  ]),
                                 ],
                                 title="Заказы",
                             ),
@@ -36,20 +33,20 @@ def messages_orders_tab():
                                     html.P(),
                                     html.Div([
                                       "Техместа. Уровень 1",
-                                      dcc.Dropdown(id="checklist_level_1_messages_orders_tab", multi=True),
+                                      dcc.Dropdown(id="checklist_level_1_orders_moved_tab", multi=True),
                                   ]),
 
 
                                     html.P(),
                                     html.Div([
                                       "EO Основной Класс",
-                                      dcc.Dropdown(id="checklist_main_eo_class_messages_orders_tab", multi=True),
+                                      dcc.Dropdown(id="checklist_main_eo_class_orders_moved_tab", multi=True),
                                   ]),
                                     
                                     html.P(),
                                     html.Div([
                                       "EO Класс",
-                                      dcc.Dropdown(id="checklist_eo_class_messages_orders_tab", multi=True),
+                                      dcc.Dropdown(id="checklist_eo_class_orders_moved_tab", multi=True),
                                   ]),
                                     
                                     
@@ -57,7 +54,7 @@ def messages_orders_tab():
                                     html.P(),
                                     html.Div([
                                       "Техместа. Уровень 2",
-                                      dcc.Dropdown(id="checklist_level_2_messages_orders_tab", multi=True),
+                                      dcc.Dropdown(id="checklist_level_2_orders_moved_tab", multi=True),
                                   ]),
 
                                   #html.P(),
@@ -78,19 +75,12 @@ def messages_orders_tab():
                                   #    dcc.Dropdown(id="checklist_level_5", multi=True),
                                   #]),
 
-                                  html.P(),
-                                    html.Div([
-                                      "Базисный срок начала. Месяц, год",
-                                      dcc.Dropdown(id="basis_start_date", multi=True),
-                                  ]),
+                                 
                                 ],
                                 title="EO",
                             ),
                             
-                            dbc.AccordionItem(
-                                "This is the content of the third section",
-                                title="Item 3",
-                            ),
+                            
                         ],
                     )
                 )
@@ -100,19 +90,11 @@ def messages_orders_tab():
                 ),
                 dbc.Col(width=9,
                     children=[
-                        html.P(id='number_of_rows_text_orders'),
+                      html.P('Выборка: "arm_planir_new_plan_date_2.csv" группа: Самосвалы карьерные HD1500-8 в "03. Полюс Вернинское" из АРМ Планировщик с данными от 31.01.2022'),
+                      html.P(),
+                      html.P(id='total_number_of_orders_in_january'), # Общее количество заказов, которые были запланированы в январе
+                     
                         
-                        html.P(),
-                        html.Div(
-                            children=[
-                                html.Div(id='orders_table'),
-                                # dcc.Loading(id='loading', parent_style=loading_style)
-                            ], style={
-                                # 'position': 'relative',
-                                # 'display': 'flex',
-                                'justify-content': 'center'
-                                      }
-                            ),
 
 
                     ]),
@@ -125,4 +107,4 @@ def messages_orders_tab():
             
         
 
-    return messages_orders_tab_block
+    return orders_moved_tab_block
