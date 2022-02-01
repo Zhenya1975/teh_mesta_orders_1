@@ -540,7 +540,7 @@ def orders_moved_tab(checklist_basis_start_date_orders_moved_tab):
   fig = go.Figure()
   fig = go.Figure(data=[
     go.Bar(name='Запланированные на январь и оставшиеся в январе', x=x, y=y1, marker_color='green', text=y1,textposition='auto',),
-    go.Bar(name='Перенесенные с января', x=x, y=y2, marker_color='red', text=y2,textposition='auto'),
+    go.Bar(name='Перенесенные с января. В январском столбике', x=x, y=y2, marker_color='red', text=y2,textposition='auto'),
     go.Bar(name='Перенесенные с января', x=x, y=y3, marker_color='#ffcccb', text=y3, textposition='auto')
   ])
 
