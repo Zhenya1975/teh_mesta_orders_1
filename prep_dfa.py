@@ -27,9 +27,27 @@ uploaded_iw_39_df['basis_start_month'] = pd.DatetimeIndex(uploaded_iw_39_df['Б�
 uploaded_iw_39_df['basis_start_date'] = pd.DatetimeIndex(uploaded_iw_39_df['Базисный срок начала']).date
 uploaded_iw_39_df['basis_start_month_year'] = uploaded_iw_39_df['basis_start_month'].astype(str) + '_' + uploaded_iw_39_df['basis_start_year'].astype(str)
 
+# парсим статусы и укладываем их в листы.
+order_system_status = []
+order_system_status_full_list = []
+for index, row in uploaded_iw_39_df.iterrows():
+  order_system_status_string = row['СистСтатус']
+  order_user_status_string = row['ПользСтатус']
+  message_system_status_string = row['Системный статус сообщения ТОРО']
+  
+  # делим строку на лист со статусами
+  order_system_status_list = order_system_status_string.split(sep = " ")
+  # итерируемся по полученному списку
+  for order_status in order_system_status_list:
+    # если значение статуса еще нет в общем списке статусов, то добавляем его
+    if order_status not in order_system_status_full_list:
+      order_system_status_full_list.append(order_status)
 
+  order_system_status.append(order_system_status_list)
 
+uploaded_iw_39_df['order_system_status'] = order_system_status
 
+print(order_system_status_full_list)
 uploaded_iw_39_df.to_csv('data/uploaded_iw_39_df_delete.csv')
 
 
