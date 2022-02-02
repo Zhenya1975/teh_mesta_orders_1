@@ -73,6 +73,27 @@ for index, row in uploaded_iw_39_df.iterrows():
 
 # добавляем колонку с текстом "iw39" по этому статусу можно будет определить запись из iw39
 uploaded_iw_39_df.loc[:, 'iw39'] = 'iw39'
+
+# склеиваем с таблицей order_category для описания фильтров по виду заказа
+order_category = pd.read_csv('data/catalogues/order_category.csv')
+uploaded_iw_39_df_ = pd.merge(uploaded_iw_39_df, order_category, on='Вид заказа', how='left')
+uploaded_iw_39_df = uploaded_iw_39_df_.copy()
+
+# готовим дикт для переименовывания колонок с кодами системных статусов заказов
+order_system_status = pd.read_csv('data/catalogues/order_system_status.csv')
+order_sytem_status_dict = {}
+for index, row in order_system_status.iterrows():
+  order_system_status_code = row['Системные статусы']
+  order_system_status_description = row['Системные статусы Описание']
+  order_sytem_status_dict[order_system_status_code] = order_system_status_code + "; " + order_system_status_description
+
+
+# переименовываем колонки
+uploaded_iw_39_df = uploaded_iw_39_df.rename(columns = order_sytem_status_dict)
+
+
+
+
 uploaded_iw_39_df.reset_index(drop=True, inplace=True)
 uploaded_iw_39_df.to_csv('data/uploaded_iw_39_df_delete.csv')
 
