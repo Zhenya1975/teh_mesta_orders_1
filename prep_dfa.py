@@ -6,11 +6,21 @@ uploaded_iw_39_file_name = 'iw_39_verninskoye_dump_tr_excav_02_02_2022.csv'
 
 uploaded_iw_39_file_path = 'data/uploaded_data/' + uploaded_iw_39_file_name
 
-uploaded_iw_39_df = pd.read_csv(uploaded_iw_39_file_path, dtype = str)
+uploaded_iw_39_df_ = pd.read_csv(uploaded_iw_39_file_path, dtype = str)
+
+iw_39_coulumns = ['Заказ','Базисный срок начала', 'Базисный срок конца', 'БЕ',	'Группа плановиков', 'Сообщение',	'Вид заказа', 'Вид работы ТОРО', 'Время ремонтного простоя (Зкз)','Общее время простоя (Зкз)', 'Метка удаления', 'СистСтатус', 'ПользСтатус', 'Системный статус сообщения ТОРО', 'Наименование класса ЕО', 'Краткий текст', 'Единица оборудования', 'Техническое место',	'Название технического места',	'СПП - заголовок заказа']
+
+# uploaded_iw_39_df = uploaded_iw_39_df_.loc[:, iw_39_coulumns].reset_index(drop=True, inplace=True)
+uploaded_iw_39_df = uploaded_iw_39_df_[iw_39_coulumns]
+
 
 # удаляем строки с ETO и НД из колонки Вид работы ТОРО
 
 uploaded_iw_39_df = uploaded_iw_39_df.loc[uploaded_iw_39_df['Вид работы ТОРО'] != 'ЕТО']
+
+
+
+
 uploaded_iw_39_df = uploaded_iw_39_df.loc[uploaded_iw_39_df['Вид работы ТОРО'] != 'НД']
 uploaded_iw_39_df.dropna(subset=['Вид работы ТОРО'], inplace=True)
 
@@ -46,8 +56,24 @@ for index, row in uploaded_iw_39_df.iterrows():
   order_system_status.append(order_system_status_list)
 
 uploaded_iw_39_df['order_system_status'] = order_system_status
+# создаем колонки с именами системных статусов
+for status in order_system_status_full_list:
+  uploaded_iw_39_df[status] = 0
 
-print(order_system_status_full_list)
+
+
+# Итерируемся по основному датафрему
+for index, row in uploaded_iw_39_df.iterrows():
+  # получаем значение со списком системных статусов
+  order_syst_status = row['order_system_status']
+  #записываем в колонки статусов единички
+  for status in order_syst_status:
+    uploaded_iw_39_df.loc[index, status] = 1
+
+
+# добавляем колонку с текстом "iw39" по этому статусу можно будет определить запись из iw39
+uploaded_iw_39_df.loc[:, 'iw39'] = 'iw39'
+uploaded_iw_39_df.reset_index(drop=True, inplace=True)
 uploaded_iw_39_df.to_csv('data/uploaded_iw_39_df_delete.csv')
 
 
