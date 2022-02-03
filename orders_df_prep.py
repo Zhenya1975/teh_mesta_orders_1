@@ -34,8 +34,16 @@ uploaded_iw_39_df.sort_values(['Базисный срок начала'], inplac
 
 uploaded_iw_39_df['basis_start_year'] = pd.DatetimeIndex(uploaded_iw_39_df['Базисный срок начала']).year
 uploaded_iw_39_df['basis_start_month'] = pd.DatetimeIndex(uploaded_iw_39_df['Базисный срок начала']).month
+
+# меняем текст типа "1_2022" на "январь 2022"
+month_name_dict = {1: "январь", 2: "февраль", 3: "март", 4: "апрель", 5: "май", 6: "июнь", 7: "июль", 8: "август", 9: "сентябрь", 10: "октябрь", 11: "ноябрь", 12: "декабрь"} 
+uploaded_iw_39_df['basis_start_month_name'] = uploaded_iw_39_df['basis_start_month'].map(month_name_dict)
+
+
 uploaded_iw_39_df['basis_start_date'] = pd.DatetimeIndex(uploaded_iw_39_df['Базисный срок начала']).date
 uploaded_iw_39_df['basis_start_month_year'] = uploaded_iw_39_df['basis_start_month'].astype(str) + '_' + uploaded_iw_39_df['basis_start_year'].astype(str)
+uploaded_iw_39_df['basis_start_monthname_year'] = uploaded_iw_39_df['basis_start_month_name'].astype(str) + '_' + uploaded_iw_39_df['basis_start_year'].astype(str)
+
 
 # парсим статусы и укладываем их в листы.
 order_system_status = []
@@ -77,6 +85,8 @@ uploaded_iw_39_df.loc[:, 'iw39'] = 'iw39'
 # склеиваем с таблицей order_category для описания фильтров по виду заказа
 order_category = pd.read_csv('data/catalogues/order_category.csv')
 uploaded_iw_39_df_ = pd.merge(uploaded_iw_39_df, order_category, on='Вид заказа', how='left')
+uploaded_iw_39_df_['Вид_заказа'] = uploaded_iw_39_df_['Вид заказа'] + "; " + uploaded_iw_39_df_['Вид заказа Описание']
+
 uploaded_iw_39_df = uploaded_iw_39_df_.copy()
 
 # готовим дикт для переименовывания колонок с кодами системных статусов заказов
@@ -90,13 +100,13 @@ for index, row in order_system_status.iterrows():
 
 # переименовываем колонки
 uploaded_iw_39_df = uploaded_iw_39_df.rename(columns = order_sytem_status_dict)
-
-
+# добавляем колонку count
+uploaded_iw_39_df['count'] = 1
 
 
 uploaded_iw_39_df.reset_index(drop=True, inplace=True)
-uploaded_iw_39_df.to_csv('data/uploaded_iw_39_df_delete.csv')
+uploaded_iw_39_df.to_csv('data/uploaded_iw_39_df.csv')
+# print("len uploaded_iw_39_df", len(uploaded_iw_39_df))
 
 
-
-# python prep_dfa.py
+# python orders_df_prep.py
