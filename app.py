@@ -292,9 +292,14 @@ def teh_mesta(
     # отфильтровываем таблицу значениями из селектов
 
     eo_df = pd.read_csv('data/full_eo_list.csv', dtype = str)
+    eo_df["operation_start_date"] = eo_df["operation_start_date"].astype("datetime64[ns]")
     eo_upper_level_df = pd.merge(eo_df, level_upper, on='level_upper', how='left')
+    
+    level_1 = pd.read_csv('data/level_1.csv')
+    
+    eo_upper_level_level_1_df = pd.merge(eo_upper_level_df, level_1, on='level_1', how='left')        
 
-    eo_filtered_df = eo_upper_level_df.loc[
+    eo_filtered_df = eo_upper_level_level_1_df.loc[
     eo_df['level_1'].isin(level_1_table_filter) &
     eo_df['eo_class_code'].isin(eo_class_table_filter)&
     eo_df['eo_main_class_code'].isin(main_eo_table_filter)&
@@ -302,14 +307,13 @@ def teh_mesta(
     ]
     
 
-
-
     table_list = []
     for index,row in eo_filtered_df.iterrows():
         temp_dict = {}
         eo_code = row['eo_code']
         eo_description = row['eo_description']
         eo_class_description = row['eo_class_description']
+        temp_dict['Завод'] = row['level_1_description']
         temp_dict['ЕО код'] = eo_code
         temp_dict['ЕО описание'] = eo_description
         temp_dict['Основной Класс ЕО код'] = row['eo_main_class_code']
@@ -318,6 +322,10 @@ def teh_mesta(
         temp_dict['Техместо код'] = row['teh_mesto']
         temp_dict['Техместо описание'] = row['teh_mesto_description']
         temp_dict['Вышестоящее техместо'] = row['level_upper'] + "; " + row['Название технического места']
+        
+        operation_start_date = row['operation_start_date'].strftime("%d.%m.%Y")
+        # print(operation_start_date)
+        temp_dict['Дата начала эксплуатации'] = operation_start_date
        
 
         table_list.append(temp_dict)
