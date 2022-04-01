@@ -2,6 +2,7 @@ import pandas as pd
 import initial_values
 from datetime import timedelta
 import json
+import aws_files
 
 first_day_of_selection = initial_values.first_day_of_selection
 last_day_of_selection = initial_values.last_day_of_selection
@@ -49,7 +50,10 @@ def ktg_data_reading():
 
 def maintanance_jobs_df():
     """чтение maintanance_jobs_df"""
-    maintanance_jobs_df = pd.read_csv('data/maintanance_jobs_df.csv')
+    # maintanance_jobs_df = pd.read_csv('data/maintanance_jobs_df.csv')
+    maintanance_jobs_df = pd.read_csv(aws_files.get_file("maintanance_jobs_df.csv"))
+    aws_files.delete_file()
+  
     # with open('saved_filters.json', 'r') as openfile:
       # Reading from json file
       # saved_filters_dict = json.load(openfile)
@@ -59,9 +63,9 @@ def maintanance_jobs_df():
     #  be_filter = full_be_list
     # maintanance_jobs_df = maintanance_jobs_df.loc[maintanance_jobs_df["level_1"].isin(be_filter)]
     #maintanance_jobs_df = maintanance_jobs_df.astype({'downtime_plan': float, "month_year_sort_index": int, "year":int, "month":int, "day": int, "hour":int})
-
+    
     return maintanance_jobs_df
-
+# maintanance_jobs_df()
 
 			
 
