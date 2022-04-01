@@ -318,11 +318,12 @@ def teh_mesta(
         temp_dict['ЕО описание'] = eo_description
         temp_dict['Основной Класс ЕО код'] = row['eo_main_class_code']
         temp_dict['Основной Класс ЕО описание'] = row['eo_main_class_description']
-        temp_dict['Класс ЕО'] = row['eo_class_code'] + "; " + eo_class_description
+        temp_dict['Класс ЕО код'] = row['eo_class_code']
+        temp_dict['Класс ЕО код'] = eo_class_description
         temp_dict['Техместо код'] = row['teh_mesto']
         temp_dict['Техместо описание'] = row['teh_mesto_description']
-        temp_dict['Вышестоящее техместо'] = row['level_upper'] + "; " + row['Название технического места']
-        
+        temp_dict['Вышестоящее техместо код'] = row['level_upper']
+        temp_dict['Вышестоящее техместо наименование'] = row['Название технического места']
         operation_start_date = row['operation_start_date'].strftime("%d.%m.%Y")
         # print(operation_start_date)
         temp_dict['Дата начала эксплуатации'] = operation_start_date
