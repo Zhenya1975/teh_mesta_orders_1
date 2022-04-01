@@ -13,14 +13,17 @@ last_day_of_selection = initial_values.last_day_of_selection
 def full_eo_list_actual_func():
   """чтение full_eo_list_actual"""
   # full_eo_list_actual = pd.read_csv('data/full_eo_list_actual.csv', dtype=str)
-  full_eo_list_actual = pd.read_csv("https://drive.google.com/uc?export=download&id=1GDB2rVwdquDQlI7qrVAlwwiaK2L86nzw", dtype=str)
-  
+  # full_eo_list_actual = pd.read_csv("https://drive.google.com/uc?export=download&id=1GDB2rVwdquDQlI7qrVAlwwiaK2L86nzw", dtype=str)
+  # full_eo_list_actual = pd.read_csv('data/full_eo_list_actual.csv', dtype=str)
+
+  full_eo_list_actual = pd.read_csv(aws_files.get_file("full_eo_list_actual.csv"), dtype=str)
+  aws_files.delete_file()
   # level_1_df = pd.read_csv("data/level_1.csv", dtype=str)
   # full_eo_list_actual = pd.merge(full_eo_list_actual, level_1_df, on = 'level_1', how = 'left')
   full_eo_list_actual["operation_start_date"] = pd.to_datetime(full_eo_list_actual["operation_start_date"])
   full_eo_list_actual["operation_finish_date"] = pd.to_datetime(full_eo_list_actual["operation_finish_date"])
   full_eo_list_actual = full_eo_list_actual.astype({'strategy_id': int, 'avearage_day_operation_hours': float})
-
+  # print(full_eo_list_actual.info())
   return full_eo_list_actual
 # full_eo_list_actual_func()
 
