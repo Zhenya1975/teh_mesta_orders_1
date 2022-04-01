@@ -13,6 +13,7 @@ dash-bootstrap-templates = "^1.0.4"
 openpyxl = "^3.0.9"
 functions = "^0.7.0"
 boto3 = "^1.21.31"
+sklearn = "^0.0"
 
 [tool.poetry.dev-dependencies]
 

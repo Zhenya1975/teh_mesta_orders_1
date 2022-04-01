@@ -1,25 +1,58 @@
 import pandas as pd
 # import numpy as np
-from dash import Dash, dcc, html, Input, Output, callback_context, State
+from dash import Dash, dcc, html, Input, Output, callback_context, State, callback_context
 import dash_bootstrap_components as dbc
 from dash_bootstrap_templates import ThemeSwitchAIO
 from dash_bootstrap_templates import load_figure_template
 import datetime
-import functions
-import eo_tab
-import messages_orders_tab
-import messages_orders
-import orders_moved_tab
+
+import tab_main
 import settings_tab
-# import orders_tab
+import functions
+import func_maintanance_jobs_df_prepare
+import func_ktg_data_prep
+
+
+# import widget_fig_piechart_downtime_2023
+# import widget_fig_piechart_downtime_2024
+# import widget_fig_piechart_downtime_2025
+import ktg_table_html
+import p11_table_html
+import func_be_select_data_prep
+import func_model_eo_select_data_prep
+import func_update_downtime_graph_data
+
+import widget_table_ktg
+import widget_download_eo
+import widget_download_maint_jobs
+import widgets
+import func_man_hours_data_prep
+
+# import tab_coverage
+# import tab_settings
+
+
+
+# import functions
+# import title_text
+# import fig_downtime_by_years
+# import table_maintanance_xlsx
+# import fig_ktg_by_years
+# import fig_planned_3y_ktg
+# import fig_piechart_downtime_by_categories
+# import ktg_by_month_models
+# import ktg_table_html
+
+
+
+# import initial_values
+
 from dash import dash_table
 import base64
 import io
 import json
 import plotly.graph_objects as go
-# import plotly.graph_objects as go
-# import result_df_prep
-# import clean_messages_raw_file
+# import fig_coverage
 
 # select the Bootstrap stylesheet2 and figure template2 for the theme toggle here:
 # template_theme1 = "sketchy"
@@ -28,6 +61,7 @@ template_theme2 = "darkly"
 # url_theme1 = dbc.themes.SKETCHY
 url_theme1 = dbc.themes.FLATLY
 url_theme2 = dbc.themes.DARKLY
+
 
 
 loading_style = {
@@ -44,6 +78,7 @@ templates = [
     "cyborg",
     "darkly",
     "vapor",
+    "sandstone"
 ]
 
 load_figure_template(templates)
@@ -57,13 +92,21 @@ app = Dash(__name__, external_stylesheets=[url_theme1, dbc_css])
 ===============================================================================
 Layout
 """
+
+tabs_styles = {
+    'height': '34px'
+}
+
+
+
 app.layout = dbc.Container(
-    dbc.Row(
-        [
+    dbc.Row(        [
             dbc.Col(
                 [
-                    html.H4("ТЕХНИЧЕСКИЕ МЕСТА, ЗАКАЗЫ"),
-                    ThemeSwitchAIO(aio_id="theme", themes=[url_theme1, url_theme2], ),
+                    html.H4("КТГ 2023-2025"),
+                    ThemeSwitchAIO(
+                      aio_id="theme", themes=[url_theme1, url_theme2],
+                    ),
 
                     html.Div([
                         dcc.Tabs(
@@ -71,15 +114,16 @@ app.layout = dbc.Container(
                             style={
                                 # 'width': '50%',
                                 # 'font-size': '200%',
-                                # 'height':'5vh'
+                                'height':'10vh'
                             },
-                            value='tab_select_parameters',
+                            value='ktg',
                             # parent_className='custom-tabs',
                             # className='custom-tabs-container',
                             children=[
-                                eo_tab.eo_tab(),
-                                messages_orders_tab.messages_orders_tab(),
-                                orders_moved_tab.orders_moved_tab(),
+                                tab_main.maintanance_chart_tab(),
+                                # coverage_tab.coverage_tab(),
+                                # messages_orders_tab.messages_orders_tab(),
+                                # orders_moved_tab.orders_moved_tab(),
                                 settings_tab.settings_tab()
 
                                 # tab2(),
@@ -93,491 +137,498 @@ app.layout = dbc.Container(
         ]
     ),
     className="m-4 dbc",
-    # fluid=True,
+    fluid=True,
+    
 )
 
 
+######################### ОСНОВНОЙ ОБРАБОТЧИК ДЛЯ ПОСТРОЕНИЯ ГРАФИКОВ ##############################
 @app.callback([
     Output("checklist_level_1", "value"),
     Output("checklist_level_1", "options"),
-    Output("checklist_eo_class", "value"),
-    Output("checklist_eo_class", "options"),
-     Output("checklist_main_eo_class", "value"),
-    Output("checklist_main_eo_class", "options"),
-    Output("checklist_level_upper", "value"),
-    Output("checklist_level_upper", "options"),
+    Output("model_eo_filter", "value"),
+    Output("model_eo_filter", "options"),
+    
+    Output('eo_qty_2023', 'children'),
+    Output('eo_qty_2024', 'children'),
+    Output('eo_qty_2025', 'children'),
+    Output('ktg_2023', 'children'),
+    Output('ktg_2024', 'children'),
+    Output('ktg_2025', 'children'),
+  
+    Output('planned_downtime', 'figure'),
+    Output('fig_ktg_3y_by_months_id', 'figure'),
+    
 
-    Output('eo_table', 'children'),
-    Output('number_of_rows_text', 'children'),
-    Output('loading', 'parent_style')
+    Output('ktg_by_month_table', 'children'),
+    Output('p11_table', 'children'),
+    
+    Output('fig_man_hours', 'figure'),
+  
+    Output('loading', 'parent_style'),
 
 ],
-
     [
-        Input('checklist_level_1', 'value'),
-        Input('checklist_eo_class', 'value'),
-        Input('checklist_main_eo_class', 'value'),
-        Input('checklist_level_upper', 'value'),
+      Input(ThemeSwitchAIO.ids.switch("theme"), "value"),
+      Input('checklist_level_1', "value"),
+      Input('model_eo_filter', "value"),
+
+      # Input("btn_update", "n_clicks"),
 
     ],
 )
-def teh_mesta(
-        checklist_level_1,
-        checklist_eo_class,
-        checklist_main_eo_class,
-        checklist_level_upper
-      ):
-    # changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    
-    # читаем файл с дефолтными фильтрами
+
+# def maintanance(theme_selector, btn_update_n_click):
+def maintanance(theme_selector, checklist_be, checklist_model_eo):  
+   # читаем файл с дефолтными фильтрами
     # Opening JSON file
+  with open('saved_filters.json', 'r') as openfile:
+    # Reading from json file
+    saved_filters_dict = json.load(openfile)
+
+  
+  changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+  if theme_selector:
+      graph_template = 'sandstone'
+  # bootstrap
+
+  else:
+      graph_template = 'plotly_dark'
+  # if checklist_be == None:
+  #   be_filter = func_be_select_data_prep.be_select_data_prep()[1]
+  # elif checklist_be != None:
+  #   be_filter = checklist_be
+    
+  # maintanance_jobs_df = functions.maintanance_jobs_df()
+
+  
+ 
+  # если фильтр не трогали и его значение равно None, то вытаскиваем значение из сохраненного фильтра
+  be_full_list = func_be_select_data_prep.be_select_data_prep()[2]
+  
+  
+  if checklist_be == None:
+    checklist_be_value = saved_filters_dict['filter_be']
+    if len(checklist_be_value) == 0:
+      be_list_for_dataframes_filtering = be_full_list
+    else:
+      be_list_for_dataframes_filtering = checklist_be_value
+  
+  # если в фильтре что-то есть и он не пустой то берем значение из фильтра и переписываем json
+  elif checklist_be != None and len(checklist_be) != 0:
+    be_list_for_dataframes_filtering = checklist_be
+    saved_filters_dict['filter_be'] = checklist_be
+    # записываем в json
+    with open("saved_filters.json", "w") as jsonFile:
+      json.dump(saved_filters_dict, jsonFile)
+    checklist_be_value = checklist_be
+  # ессли фильтр трогали, но очистили то фильтр надо очистить
+  elif len(checklist_be) == 0:
+    be_list_for_dataframes_filtering = be_full_list
+    saved_filters_dict['filter_be'] = checklist_be
+    # записываем в json
+    with open("saved_filters.json", "w") as jsonFile:
+      json.dump(saved_filters_dict, jsonFile)
+    checklist_be_value = checklist_be
+  # checklist_be_value = []
+  checklist_be_options = func_be_select_data_prep.be_select_data_prep()[0]
+
+  ############# ОБРАБОТЧИК СЕЛЕКТА ФИЛЬТРА МОДЕЛЕЙ ЕО ###################
+ 
+  model_eo_filter_full_list = func_model_eo_select_data_prep.model_eo_select_data_prep(be_list_for_dataframes_filtering)[1]
+  
+  """все возможные значения в фильтре моделей ео"""
+   
+  # записываем в model_eo_value то, что лежит в фильтре
+  
+  if checklist_model_eo == None:
+    model_eo_filter_list_for_dataframes_filtering = model_eo_filter_full_list
+    checklist_model_eo_value = saved_filters_dict['filter_model_eo']
+    # если фильтр не трогали и его значение равно None, то вытаскиваем значение из сохраненного в json
+    # если из json пришел пустой лист, то в переменную для фильтрации отдаем полный список 
+    
+    if len(saved_filters_dict['filter_model_eo']) == 0:
+      model_eo_filter_list_for_dataframes_filtering = model_eo_filter_full_list
+    # если из json пришел не пустой лист, то в переменную для фильтрации отдаем значение из json
+    else:
+      model_eo_filter_list_for_dataframes_filtering = saved_filters_dict['filter_model_eo']
+    
+  # если в фильтре что-то есть и он не пустой то берем значение из фильтра и переписываем json
+  elif checklist_model_eo != None and len(checklist_model_eo) != 0:
+    model_eo_filter_list_for_dataframes_filtering = checklist_model_eo
+    saved_filters_dict['filter_model_eo'] = checklist_model_eo
+    # записываем в json
+    with open("saved_filters.json", "w") as jsonFile:
+      json.dump(saved_filters_dict, jsonFile)
+    checklist_model_eo_value = checklist_model_eo
+    
+  # если фильтр трогали, но очистил
+  elif len(checklist_model_eo) == 0:
+
+    model_eo_filter_list_for_dataframes_filtering = model_eo_filter_full_list
+    saved_filters_dict['filter_model_eo'] = checklist_model_eo
+    # записываем в json
+    with open("saved_filters.json", "w") as jsonFile:
+      json.dump(saved_filters_dict, jsonFile)
+    checklist_model_eo_value = checklist_model_eo
+  ##########################################################################  
+  checklist_model_eo = func_model_eo_select_data_prep.model_eo_select_data_prep(be_list_for_dataframes_filtering)[0]
+  
+  ################# КОНЕЦ ОБРАБОТЧИКОВ ФИЛЬТРОВ #################################################
+  
+
+  total_qty_EO_2023 = functions.total_qty_EO(be_list_for_dataframes_filtering, model_eo_filter_list_for_dataframes_filtering)[0]
+  total_qty_EO_2024 = functions.total_qty_EO(be_list_for_dataframes_filtering, model_eo_filter_list_for_dataframes_filtering)[1]
+  total_qty_EO_2025 = functions.total_qty_EO(be_list_for_dataframes_filtering, model_eo_filter_list_for_dataframes_filtering)[2]
+
+  eo_qty_2023_card_text = 'Кол-во ЕО в выборке: {}'.format(total_qty_EO_2023)
+  eo_qty_2024_card_text = 'Кол-во ЕО в выборке: {}'.format(total_qty_EO_2024)
+  eo_qty_2025_card_text = 'Кол-во ЕО в выборке: {}'.format(total_qty_EO_2025)
+
+  
+
+  # ktg_2023_text = widgets.widgets_data(theme_selector, be_list_for_dataframes_filtering)[3]
+  ktg_2023_text =  func_update_downtime_graph_data.update_downtime_graph_data(be_list_for_dataframes_filtering, model_eo_filter_list_for_dataframes_filtering)[0]
+  ktg_2023_card_text = 'КТГ по году: {}'.format(ktg_2023_text)
+
+  
+  #ktg_2024_text = widgets.widgets_data(theme_selector, be_list_for_dataframes_filtering)[4]
+  ktg_2024_text =  func_update_downtime_graph_data.update_downtime_graph_data(be_list_for_dataframes_filtering, model_eo_filter_list_for_dataframes_filtering)[1]
+  ktg_2024_card_text = 'КТГ по году: {}'.format(ktg_2024_text)
+
+  ktg_2025_text =  func_update_downtime_graph_data.update_downtime_graph_data(be_list_for_dataframes_filtering,model_eo_filter_list_for_dataframes_filtering)[2]
+  ktg_2025_card_text = 'КТГ по году: {}'.format(ktg_2025_text)
+
+
+  fig_downtime = widgets.widgets_data(theme_selector)[0]
+
+
+  fig_ktg = widgets.widgets_data(theme_selector)[1]
+
+
+  df_ktg_table = pd.read_csv('widget_data/ktg_table_data.csv')
+  ktg_by_month_table = ktg_table_html.ktg_table(df_ktg_table)
+
+  
+  df_p11_table = pd.read_csv('widget_data/p11data.csv')
+  p11_table = p11_table_html.ktg_table(df_p11_table)
+
+  # обновить csv для выгрузки eo
+  widget_download_eo.eo_list_download_preparation(be_list_for_dataframes_filtering)
+
+  fig_man_hours = func_man_hours_data_prep.man_hours_data_pre(theme_selector, be_list_for_dataframes_filtering, model_eo_filter_list_for_dataframes_filtering)
+  new_loading_style = loading_style
+
+
+  return checklist_be_value, checklist_be_options, checklist_model_eo_value, checklist_model_eo, eo_qty_2023_card_text,eo_qty_2024_card_text, eo_qty_2025_card_text, ktg_2023_card_text, ktg_2024_card_text, ktg_2025_card_text, fig_downtime, fig_ktg, ktg_by_month_table, p11_table, fig_man_hours, new_loading_style
+
+
+
+
+
+
+
+
+
+
+  
+####################### ОБРАБОТЧИК ВЫГРУЗКИ ЕО В EXCEL #####################################
+@app.callback(
+    Output("download_excel_eo_table", "data"),
+    Input("btn_download_eo_table", "n_clicks"),
+    prevent_initial_call=True,)
+def funct(n_clicks_eo_table):
+  # df = pd.read_csv('widget_data/eo_download_data.csv', dtype = str)
+  df = pd.read_csv('widget_data/eo_download_data.csv', dtype = str, decimal=",")
+  # df['Среднесуточная наработка'].apply(lambda x: x.replace(',','.'))
+  # df['Среднесуточная наработка'] = df['Среднесуточная наработка'].astype(float)
+  if n_clicks_eo_table:
+    return dcc.send_data_frame(df.to_excel, "EO в выборке КТГ.xlsx", index=False, sheet_name="EO в выборке КТГ")
+
+
+####################### ОБРАБОТЧИК ВЫГРУЗКИ РАБОТ В EXCEL #####################################
+# @app.callback(
+#     Output("download_excel_maint_jobs_table", "data"),
+#     Input("btn_download_maint_jobs_table", "n_clicks"),
+#     prevent_initial_call=True,)
+# def funct_maint_jobs_table(n_clicks_maint_jobs_table):
+#   # df = pd.read_csv('widget_data/eo_download_data.csv', dtype = str)
+#   df = pd.read_csv('widget_data/maint_jobs_download_data.csv', dtype = str, decimal=",")
+
+#   if n_clicks_maint_jobs_table:
+#     return dcc.send_data_frame(df.to_excel, "ТОИР воздействия.xlsx", index=False, sheet_name="ТОИР воздействия")
+
+####################### ОБРАБОТЧИК ВЫГРУЗКИ КТГ В EXCEL #####################################
+@app.callback(
+    Output("download_excel_ktg_table", "data"),
+    Input("btn_download_ktg_table", "n_clicks"),
+    prevent_initial_call=True,)
+def funct_ktg_table(n_clicks_ktg_table):
+  # df = pd.read_csv('widget_data/eo_download_data.csv', dtype = str)
+  df = pd.read_csv('widget_data/ktg_table_data.csv', dtype = str, decimal=",")
+
+  if n_clicks_ktg_table:
+    return dcc.send_data_frame(df.to_excel, "КТГ по месяцам.xlsx", index=False, sheet_name="КТГ по месяцам")
+
+
+####################### ОБРАБОТЧИК ВЫГРУЗКИ P11 В EXCEL #####################################
+@app.callback(
+    Output("download_excel_p11_table", "data"),
+    Input("btn_download_p11_table", "n_clicks"),
+    prevent_initial_call=True,)
+def funct_p11_table(n_clicks_p11_table):
+  # df = pd.read_csv('widget_data/eo_download_data.csv', dtype = str)
+  df = pd.read_csv('widget_data/p11data.csv', dtype = str, decimal=",")
+  df.columns = df.iloc[0]
+  df_new = df[1:]
+
+  if n_clicks_p11_table:
+    return dcc.send_data_frame(df_new.to_excel, "Простой по месяцам.xlsx", index=False, sheet_name="Простой по месяцам")
+
+########## Настройки################
+
+# Обработчик кнопки выгрузки в эксель таблицы с регламентом ТОИР
+@app.callback(
+    Output("download_maintanance_job_list_general", "data"),
+    Input("btn_download_maintanance_job_list_general", "n_clicks"),
+    prevent_initial_call=True,)
+def funct(n_clicks_ktg_table):
+  df = pd.read_csv('data/maintanance_job_list_general.csv')
+  if n_clicks_ktg_table:
+    return dcc.send_data_frame(df.to_excel, "maintanance_job_list_general.xlsx", index=False, sheet_name="maintanance_job_list_general")
+
+    
+# обработчик радиокнопок calculation_start_status
+@app.callback(
+    Output("output-data-4", "children"),
+    Output("calculation_start_status", "value"),
+
+    Input("calculation_start_status", "value"),
+)
+def funct_calculation_start_status(calculation_start_status):
+  # читаем файл с дефолтными фильтрами
+    # Opening JSON file
+  with open('saved_filters.json', 'r') as openfile:
+    # Reading from json file
+    saved_filters_dict = json.load(openfile)
+  output_data_4 = ""
+  
+  if  calculation_start_status == None:
+    calculation_start_status_value = saved_filters_dict['calculation_start_status_value']
+  else:
+    calculation_start_status_value = calculation_start_status
+    saved_filters_dict['calculation_start_status_value'] = calculation_start_status_value
+    # записываем в json
+    with open("saved_filters.json", "w") as jsonFile:
+      json.dump(saved_filters_dict, jsonFile)
+  
+    
+  return output_data_4, calculation_start_status_value
+
+
+  
+# Обработчик кнопки расчета maintanance_jobs_df
+@app.callback(
+    Output("output-data-2", "children"),
+    Input("btn_calc_maintanance_jobs_df", "n_clicks"),
+    )
+def funct_maintanance_job_list_general_calc(n_clicks_maintanance_jobs_df_calc):
+  message_result = ""
+  if n_clicks_maintanance_jobs_df_calc:
+    functions.maintanance_category_prep()
+    functions.select_eo_for_calculation()
+    functions.eo_job_catologue()
     with open('saved_filters.json', 'r') as openfile:
       # Reading from json file
       saved_filters_dict = json.load(openfile)
+    calculation_start_mode = saved_filters_dict["calculation_start_status_value"]
     
+    func_maintanance_jobs_df_prepare.maintanance_jobs_df_prepare(calculation_start_mode)
+    # читаем результат
+    # читаем файл с дефолтными фильтрами
+    # Opening JSON file
     
-    ################## level_1 VALUES ###################################
-    if checklist_level_1 == None:
-      filter_level_1 = saved_filters_dict['level_1']
-    else:
-      filter_level_1 = checklist_level_1
-      saved_filters_dict['level_1'] = checklist_level_1
-     
-      # записываем в json
-      with open("saved_filters.json", "w") as jsonFile:
-        json.dump(saved_filters_dict, jsonFile)
-    checklist_level_1_values = filter_level_1
-    
-    ################## level_upper VALUES ###################################
-    if checklist_level_upper == None:
-      filter_level_upper = saved_filters_dict["level_upper"]
+    maintanance_jobs_df = functions.maintanance_jobs_df()
+    # список моделей
+    model_list = list(set(maintanance_jobs_df['eo_model_name']))
+    message_dict = {}
+    for model in model_list:
+      #режем выборку по модели
+      maintanance_jobs_df_selected = maintanance_jobs_df.loc[maintanance_jobs_df['eo_model_name'] ==model]
+      # определяем количество ео в выборке
       
-    else:
-      filter_level_upper = checklist_level_upper
-      saved_filters_dict["level_upper"] = checklist_level_upper
-      # записываем в json
-      with open("saved_filters.json", "w") as jsonFile:
-        json.dump(saved_filters_dict, jsonFile)
-    checklist_level_upper_values = filter_level_upper
-    
-    ################## eo_class VALUES ###################################
-    if checklist_eo_class == None:
-      filter_eo_class = saved_filters_dict["eo_class"]
-    else:
-      filter_eo_class = checklist_eo_class
-      saved_filters_dict['eo_class'] = checklist_eo_class
-     
-      # записываем в json
-      with open("saved_filters.json", "w") as jsonFile:
-        json.dump(saved_filters_dict, jsonFile)
-    checklist_eo_class_values = filter_eo_class
+      eo_qty = len(list(set(maintanance_jobs_df_selected['eo_code'])))
+      message_dict[model] = eo_qty
+    message_result = "maintanance_jobs_df_calc пересчитан. {} единицы".format(message_dict)  
+  return message_result
 
-    ################## main_eo_class VALUES ###################################
-    if checklist_main_eo_class == None:
-      filter_main_eo_class = saved_filters_dict['main_eo_class']
-    else:
-      filter_main_eo_class = checklist_main_eo_class
-      saved_filters_dict['main_eo_class'] = checklist_main_eo_class
-     
-      # записываем в json
-      with open("saved_filters.json", "w") as jsonFile:
-        json.dump(saved_filters_dict, jsonFile)
-    checklist_main_eo_class_values = filter_main_eo_class
-
-    
-    selected_items_df = pd.read_csv('data/selected_items.csv', dtype=str)
-    selected_items_df = selected_items_df.astype({"level_no": int})
-
-    # Список чек-боксов Level_1
-    level_1_df = selected_items_df.loc[selected_items_df['level_no'] == 1]
-    checklist_level_1_options = []
-    if len(level_1_df)>0:
-        checklist_level_1_options = functions.level_checklist_data(level_1_df)[0]
-    
-
-    # Список чек-боксов eo_class
-    eo_class_df = pd.read_csv('data/eo_class.csv')
-    checklist_eo_class_options = functions.eo_class_checklist_data(eo_class_df)[0]
-
-    # Список чек-боксов main_eo_class
-    main_eo_class_df = pd.read_csv('data/main_eo_class.csv')
-    checklist_main_eo_class_options = functions.main_eo_class_checklist_data(main_eo_class_df)[0]
-
-
-    # Список чек-боксов level_2
-    # eo_class_df = pd.read_csv('data/level_2_list.csv')
-
-    # checklist_eo_class_options = functions.eo_class_checklist_data(eo_class_df)[0]
-
-    ########### фильтр для таблицы по уровню main_eo ###################
-    main_eo_all_values = functions.main_eo_class_checklist_data(main_eo_class_df)[1]
-    
-    # Если селект трогали но он пустой, то отдаем полный список
-    if checklist_main_eo_class != None and len(checklist_main_eo_class) == 0:
-      main_eo_table_filter = main_eo_all_values
-    # если селект не трогали и в сохраненных ничего нет, то тоже отдаем полный список
-    elif checklist_main_eo_class == None and len(saved_filters_dict['main_eo_class']) ==0:
-      main_eo_table_filter = main_eo_all_values
-    elif checklist_main_eo_class == None and len(saved_filters_dict['main_eo_class']) !=0:
-      main_eo_table_filter = saved_filters_dict['main_eo_class']
-    else:
-      main_eo_table_filter=checklist_main_eo_class
-
-    # print("checklist_main_eo_class", checklist_main_eo_class)
-    # print("saved_filters_dict['main_eo_class']", saved_filters_dict['main_eo_class'])
-    ########### фильтр для таблицы по уровню eo_class ###################
-    eo_class_all_values = functions.eo_class_checklist_data(eo_class_df)[1]
-    
-    # Если селект трогали но он пустой, то отдаем полный список
-    if checklist_eo_class != None and len(checklist_eo_class) == 0:
-      eo_class_table_filter = eo_class_all_values
-    # если селект не трогали и в сохраненных ничего нет, то тоже отдаем полный список
-    elif checklist_eo_class == None and len(saved_filters_dict['eo_class']) ==0:
-      eo_class_table_filter = eo_class_all_values
-    elif checklist_eo_class == None and len(saved_filters_dict['eo_class']) !=0:
-      eo_class_table_filter = saved_filters_dict['eo_class']
-
-    else:
-      eo_class_table_filter=checklist_eo_class
-
-    ########### фильтр для таблицы по уровню eo_class ###################
-    eo_class_all_values = functions.eo_class_checklist_data(eo_class_df)[1]
-    
-    # Если селект трогали но он пустой, то отдаем полный список
-    if checklist_eo_class != None and len(checklist_eo_class) == 0:
-      eo_class_table_filter = eo_class_all_values
-    # если селект не трогали и в сохраненных ничего нет, то тоже отдаем полный список
-    elif checklist_eo_class == None and len(saved_filters_dict['eo_class']) ==0:
-      eo_class_table_filter = eo_class_all_values
-    elif checklist_eo_class == None and len(saved_filters_dict['eo_class']) !=0:
-      eo_class_table_filter = saved_filters_dict['eo_class']
-
-    else:
-      eo_class_table_filter=checklist_eo_class
-    
-    ########### фильтр для таблицы по уровню level_upper ###################
-    level_upper = pd.read_csv('data/level_upper.csv')
-    level_upper.rename(columns={'teh_mesto': 'level_upper'}, inplace=True)
-    upper_level_all_values = functions.level_upper_checklist_data(level_upper)[1]
-    
-    # Если селект трогали но он пустой, то отдаем полный список
-    if checklist_level_upper != None and len(checklist_level_upper) == 0:
-      level_upper_table_filter = upper_level_all_values
-    # если селект не трогали и в сохраненных ничего нет, то тоже отдаем полный список
-    elif checklist_level_upper == None and len(saved_filters_dict['level_upper']) ==0:
-       level_upper_table_filter = upper_level_all_values
-    elif checklist_level_upper == None and len(saved_filters_dict['level_upper']) !=0:
-      level_upper_table_filter = saved_filters_dict['level_upper']
-
-    else:
-      level_upper_table_filter=checklist_level_upper
-    
-    ########### фильтр для таблицы по уровню level_1 ###################
-    
-    # если в фильтрах level_1 ничего нет, то в таблицу надо отдать все возможные значения
-    level_1_all_values = ['first01', 'first05', 'first11']
-    
-    # Если селект не трогали и нет сохраненных фильтров, то отдаем полный список
-    if checklist_level_1 != None and len(checklist_level_1)==0:
-      level_1_table_filter = level_1_all_values
-    elif checklist_level_1 == None and len(saved_filters_dict['level_1']) ==0:
-      level_1_table_filter = level_1_all_values
-    elif checklist_level_1 == None and len(saved_filters_dict['level_1']) !=0:
-      level_1_table_filter = saved_filters_dict['level_1']
-    else:
-      level_1_table_filter = checklist_level_1_values
-    
-    
-    ########### таблица с оборудованием ###################
-    # отфильтровываем таблицу значениями из селектов
-
-    eo_df = pd.read_csv('data/full_eo_list.csv', dtype = str)
-    eo_df["operation_start_date"] = eo_df["operation_start_date"].astype("datetime64[ns]")
-    eo_upper_level_df = pd.merge(eo_df, level_upper, on='level_upper', how='left')
-    
-    level_1 = pd.read_csv('data/level_1.csv')
-    
-    eo_upper_level_level_1_df = pd.merge(eo_upper_level_df, level_1, on='level_1', how='left')        
-
-    eo_filtered_df = eo_upper_level_level_1_df.loc[
-    eo_df['level_1'].isin(level_1_table_filter) &
-    eo_df['eo_class_code'].isin(eo_class_table_filter)&
-    eo_df['eo_main_class_code'].isin(main_eo_table_filter)&
-    eo_df['level_upper'].isin(level_upper_table_filter)    
-    ]
-    
-
-    table_list = []
-    for index,row in eo_filtered_df.iterrows():
-        temp_dict = {}
-        eo_code = row['eo_code']
-        eo_description = row['eo_description']
-        eo_class_description = row['eo_class_description']
-        temp_dict['Завод'] = row['level_1_description']
-        temp_dict['ЕО код'] = eo_code
-        temp_dict['ЕО описание'] = eo_description
-        temp_dict['Основной Класс ЕО код'] = row['eo_main_class_code']
-        temp_dict['Основной Класс ЕО описание'] = row['eo_main_class_description']
-        temp_dict['Класс ЕО код'] = row['eo_class_code']
-        temp_dict['Класс ЕО код'] = eo_class_description
-        temp_dict['Техместо код'] = row['teh_mesto']
-        temp_dict['Техместо описание'] = row['teh_mesto_description']
-        temp_dict['Вышестоящее техместо код'] = row['level_upper']
-        temp_dict['Вышестоящее техместо наименование'] = row['Название технического места']
-        operation_start_date = row['operation_start_date'].strftime("%d.%m.%Y")
-        # print(operation_start_date)
-        temp_dict['Дата начала эксплуатации'] = operation_start_date
-       
-
-        table_list.append(temp_dict)
-    table_df = pd.DataFrame(table_list)
-    table_df.to_csv('data/eo_table.csv')
-    number_of_rows = len(table_df)
-    number_of_rows_text = 'Количество записей: {}'.format(number_of_rows)
-
-
-    eo_table = dash_table.DataTable(
-        # id='table',
-        # editable=True,
-        columns=[{"name": i, "id": i} for i in table_df.columns],
-        data=table_df.to_dict('records'),
-        # filter_action='native',
-        style_header={
-            # 'backgroundColor': 'white',
-            'fontWeight': 'bold'
-        },
-        style_data={
-            'whiteSpace': 'normal',
-            'height': 'auto',
-        },
-        style_cell={'textAlign': 'left'},
-    )
-    
-    eo_class_droplist_options_list = functions.depending_checklists(level_1_table_filter, main_eo_table_filter)
-
-    checklist_eo_class_options = eo_class_droplist_options_list
-
-    level_upper_droplist_option_list = functions.depending_level_upper_checklist(level_1_table_filter, main_eo_table_filter)
-    checklist_level_upper_options = level_upper_droplist_option_list
-
-    new_loading_style = loading_style
-    
-    return checklist_level_1_values, checklist_level_1_options, checklist_eo_class_values, checklist_eo_class_options, checklist_main_eo_class_values, checklist_main_eo_class_options, checklist_level_upper_values, checklist_level_upper_options, eo_table, number_of_rows_text, new_loading_style
-
-############# выгрузка списка EO #################
+# Обработчик кнопки расчета ktg_data_prep
 @app.callback(
-    Output("download-excel-eo", "data"),
-    Input("btn-download-eo", "n_clicks"),
-    prevent_initial_call=True,)
-def funct(n_clicks_eo):
-    if n_clicks_eo:
-        df = pd.read_csv('data/eo_table.csv', dtype=str)
-        return dcc.send_data_frame(df.to_excel, "список_ео.xlsx", index=False, sheet_name="список_ео")
-
-
-
-@app.callback([
-    Output("checklist_basis_start_month_year", "value"),
-    Output("checklist_basis_start_month_year", "options"),
-    Output('orders_table', 'children'),
-    Output('number_of_rows_text_orders', 'children'),
-    Output('loading_messages_orders_tab', 'parent_style')
-],
-
-    [
-        Input('checklist_basis_start_month_year', 'value'),
-
-    ],
-)
-def orders_messages_tab(checklist_basis_start_month_year):
-  with open('saved_filters_messages_orders.json', 'r') as openfile:
-      # Reading from json file
-      saved_filters_messages_orders_dict = json.load(openfile)
-  ########### фильтр для таблицы заказов по фильтру "месяц и год в поле Базисный срок начала" ###################
-    
-  # если в фильтрах ничего нет, то в таблицу надо отдать все возможные значения
-  basis_start_date_all_values = messages_orders.order_data_prepare()[2]
-  
-  # Список чек-боксов Level_1
-  month_year_2022_df = pd.read_csv('data/month_year_2022.csv')
-  checklist_month_year_2022_options = functions.month_year_2022_checklist_data(month_year_2022_df)[0]
-  
-  ################## month_year_2022 VALUES ###################################
-  if checklist_basis_start_month_year == None:
-    filter_month_year_2022 = saved_filters_messages_orders_dict['basis_start_date_month_year']
-  else:
-    filter_month_year_2022 = checklist_basis_start_month_year
-    saved_filters_messages_orders_dict['basis_start_date_month_year'] = checklist_basis_start_month_year
-    
-  # записываем в json
-  with open("saved_filters_messages_orders.json", "w") as jsonFile:
-    json.dump(saved_filters_messages_orders_dict, jsonFile)
-  
-  # присваиваем значения фильтра в output функции
-  checklist_month_year_2022_values = filter_month_year_2022
-
-
-
-  # Если селект не трогали и нет сохраненных фильтров, то отдаем полный список
-  # print('длина в сохраненном фильтре', len(saved_filters_messages_orders_dict['basis_start_date_month_year']))
-  # print('checklist_basis_start_month_year', checklist_basis_start_month_year)
-  if checklist_basis_start_month_year != None and len(checklist_basis_start_month_year)==0:
-    # print("первый")
-    basis_start_month_date_table_filter = basis_start_date_all_values
-  elif checklist_basis_start_month_year == None and len(saved_filters_messages_orders_dict['basis_start_date_month_year']) ==0:
-    # print("второй")
-    basis_start_month_date_table_filter = basis_start_date_all_values
-  elif checklist_basis_start_month_year == None and len(saved_filters_messages_orders_dict['basis_start_date_month_year']) !=0:
-    # print("третий")
-    basis_start_month_date_table_filter = saved_filters_messages_orders_dict['basis_start_date_month_year']
-  else:
-    # print("четвертый")
-    basis_start_month_date_table_filter = checklist_basis_start_month_year
-
-  # print("basis_start_month_date_table_filter", basis_start_month_date_table_filter)
-  ############ Фильтруем таблицу с заказами ###############
-  orders_df = messages_orders.order_data_prepare()[0]
-  # print(basis_start_month_date_table_filter)
-  orders_filtered_df = orders_df.loc[
-  orders_df['basis_start_month_year'].isin(basis_start_month_date_table_filter)
-    ]
-
-  ######### подготовка таблицы для вывода ######################
-  table_list = []
-  for index,row in orders_filtered_df.iterrows():
-    temp_dict = {}
-    order_id = row['Заказ']
-    basis_start_date = row['БазисСрокНачала']
-    plan_date = row['Плановая дата']
-    order_user_status = row['ПользСтатус']
-    order_system_status = row['СистСтатус']
-    tk_downtime_total = row['ОбщееВремяПростояТК']
-    order_description = row['Краткий текст']
-    message_system_status = row['СистСтатСообщТОРО']
-    eo_id = row['Ед. оборудов.']
-    teh_mesto_id = row['Техместо']
-    spp_order_title = row['СПП-ЗаголЗаказа']
-
-    temp_dict['Заказ'] = order_id
-    temp_dict['БазисСрокНачала'] = basis_start_date
-    temp_dict['Плановая дата'] = plan_date
-    temp_dict['ПользСтатус (заказа)'] = order_user_status
-    temp_dict['СистСтатус'] = order_system_status
-    temp_dict['ОбщееВремяПростояТК'] = tk_downtime_total
-    temp_dict['Краткий текст'] = order_description
-    temp_dict['СистСтатСообщТОРО'] = message_system_status
-    temp_dict['ЕО; teh_mesto; СПП-ЗаголЗаказа'] = str(eo_id) + "\n" + str(teh_mesto_id) + "\n" + str(spp_order_title)
-
-
-    table_list.append(temp_dict)
-  order_table_df = pd.DataFrame(table_list)
-  order_table_df.to_csv('data/order_table_df.csv')
-  number_of_rows = len(order_table_df)
-  number_of_rows_text_orders = 'Количество записей: {}'.format(number_of_rows)
-
-
-  orders_table = dash_table.DataTable(
-        # id='table',
-        columns=[{"name": i, "id": i} for i in order_table_df.columns],
-        data=order_table_df.to_dict('records'),
-        # filter_action='native',
-        style_header={
-            # 'backgroundColor': 'white',
-            'fontWeight': 'bold'
-        },
-        style_data={
-            'whiteSpace': 'normal',
-            'height': 'auto',
-        },
-        style_cell={'textAlign': 'left'},
+    Output("output-data-3", "children"),
+    Input("btn_calc_ktg_data", "n_clicks"),
     )
-
-  orders_new_loading_style = loading_style
-
-  return checklist_month_year_2022_values, checklist_month_year_2022_options, orders_table, number_of_rows_text_orders, orders_new_loading_style
-
-
-############# Обработчик вкладки Переносы заказов ########################
-@app.callback([
-    Output("checklist_basis_start_date_orders_moved_tab", "value"),
-    Output("checklist_basis_start_date_orders_moved_tab", "options"),
-    Output('loading_orders_moved_tab', 'parent_style'),
-    Output('orders_moved_from_jan', 'figure')
-],
-
-    [
-        Input('checklist_basis_start_date_orders_moved_tab', 'value'),
-
-    ],
-)
-def orders_moved_tab(checklist_basis_start_date_orders_moved_tab):
-  with open('saved_filters_orders_moved.json', 'r') as openfile:
-      # Reading from json file
-      saved_filters_orders_moved_dict = json.load(openfile)
-  ########### фильтр для таблицы заказов по фильтру "месяц и год в поле Базисный срок начала" ###################
-    
-  # если в фильтрах ничего нет, то в таблицу надо отдать все возможные значения
-  # basis_start_date_all_values = messages_orders.order_data_prepare()[2]
-  
-  
-  month_year_2022_df = pd.read_csv('data/month_year_2022.csv')
-  checklist_orders_moved_tab_month_year_2022_options = functions.month_year_2022_checklist_data(month_year_2022_df)[0]
-  
-  ################## month_year_2022 VALUES ###################################
-  if checklist_basis_start_date_orders_moved_tab == None:
-    filter_month_year_2022_orders_moved_tab = saved_filters_orders_moved_dict['target_period_month_year']
-  else:
-    filter_month_year_2022_orders_moved_tab = checklist_basis_start_date_orders_moved_tab
-    saved_filters_orders_moved_dict['target_period_month_year'] = checklist_basis_start_date_orders_moved_tab
-    
-  # записываем в json
-  with open("saved_filters_orders_moved.json", "w") as jsonFile:
-    json.dump(saved_filters_orders_moved_dict, jsonFile)
-  
-  # присваиваем значения фильтра в output функции
-  checklist_month_year_2022_orders_moved_tab_values = filter_month_year_2022_orders_moved_tab
-
-
-
-  orders_moved_new_loading_style = loading_style
-
-  x = ['январь', 'февраль', 'март', 'апрель']
-  y1 = [20, 0, 0, 0]
-  y2 = [12, 0, 0, 0]
-  y3 = [0, 3, 2, 7]
-
-  fig = go.Figure()
-  fig = go.Figure(data=[
-    go.Bar(name='Запланированные на январь и оставшиеся в январе', x=x, y=y1, marker_color='green', text=y1,textposition='auto',),
-    go.Bar(name='Перенесенные с января. В январском столбике', x=x, y=y2, marker_color='red', text=y2,textposition='auto'),
-    go.Bar(name='Перенесенные с января', x=x, y=y3, marker_color='#ffcccb', text=y3, textposition='auto')
-  ])
-
-
-  fig.update_layout(
-      barmode='stack',
-      yaxis = {'range':[0, 50]},
-      legend=dict(
-          orientation="h",
-          yanchor="bottom",
-          y=1.02,
-          xanchor="right",
-          x=1
-      )
+def funct_ktg_data_prep_calc(n_clicks_ktg_data_prep_calc):
+  message_result = ""
+  if n_clicks_ktg_data_prep_calc:
+    func_ktg_data_prep.ktg_data_prep()
+    # читаем результат
+    # maintanance_jobs_df = functions.maintanance_jobs_df()
+    # # список моделей
+    # model_list = list(set(maintanance_jobs_df['eo_model_name']))
+    # message_dict = {}
+    # for model in model_list:
+    #   #режем выборку по модели
+    #   maintanance_jobs_df_selected = maintanance_jobs_df.loc[maintanance_jobs_df['eo_model_name'] ==model]
+    #   # определяем количество ео в выборке
       
-      # template=graph_template,
-      # xaxis={'range': [start_quarter_date, finish_quarter_date]},
-      # title='Завершено: {}<br><sup>c {} по {}</sup> '.format(fact_at_current_date, start_date, finish_date),
-  )
-
-  return checklist_month_year_2022_orders_moved_tab_values, checklist_orders_moved_tab_month_year_2022_options, orders_moved_new_loading_style, fig
-
+    #   eo_qty = len(list(set(maintanance_jobs_df_selected['eo_code'])))
+    #   message_dict[model] = eo_qty
+    # message_result = "maintanance_jobs_df_calc пересчитан. {} единицы".format(message_dict)  
+    message_result = "ktg_data пересчитан" 
+  return message_result
 
 
+
+
+def parse_contents(contents, filename):
+    content_type, content_string = contents.split(',')
+    decoded = base64.b64decode(content_string)
+
+    try:
+        if 'csv' in filename:
+            # Assume that the user uploaded a CSV file
+            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+        elif 'xlsx' in filename and "maintanance_job_list_general" in filename:
+            # Assume that the user uploaded an excel file
+            df = pd.read_excel(io.BytesIO(decoded),decimal=',')
+            
+
+            # проверяем, что в файле есть нужные колонки 
+            list_of_columns_in_uploaded_df = df.columns.tolist()
+            check_column_list = ['maintanance_code_id', 'maintanance_code', 'maintanance_category_id','upper_level_tehmesto_code', 'maintanance_name', 'interval_motohours', 'downtime_planned', 'pass_interval', 'source']
+            control_value = 1
+            
+            for column in check_column_list:
+              if column in list_of_columns_in_uploaded_df:
+                continue
+              else:
+                control_value = 0
+          
+                break
+     
+            if control_value == 1:
+       
+              df.to_csv('data/maintanance_job_list_general.csv')
+              print("maintanance_job_list_general загружен")
+              functions.pass_interval_fill()
+              functions.maintanance_category_prep()
+              functions.eo_job_catologue()
+              print("eo_job_catologue обновлен")
+              functions.job_codes_prep()
+              print("job_codes обновлен")
+              
+            else:
+              print('не хватает колонок')
+            
+            # если мы загрузили список с работами, то надо подготовить данные для того чтобы вставить
+            # даты начала расчета для ТО-шек
+            
+
+        elif 'xlsx' in filename and "eo_job_catologue" in filename:
+            # Assume that the user uploaded an excel file
+            df = pd.read_excel(io.BytesIO(decoded))
+            # values = {"last_maintanance_date": default_to_start_date.date()}
+
+            #df.fillna(value=values)
+  
+            updated_eo_maintanance_job_code_last_date = df.loc[:, ['eo_maintanance_job_code', 'last_maintanance_date']]
+            
+            functions.fill_calendar_fond()
+            #functions.maintanance_matrix()
+            functions.eo_job_catologue()
+            functions.maintanance_jobs_df_prepare()
+        
+            updated_eo_maintanance_job_code_last_date.to_csv('data/eo_maintanance_job_code_last_date.csv')
+
+        # загружаем список eo - в ответ получаем список для перепроверки даты ввода в эксплуатацию, даты списания, среднесуточной наработки
+        elif 'xlsx' in filename and "eo_request_data" in filename:
+          # Assume that the user uploaded an excel file
+          df_eo_request_list = pd.read_excel(io.BytesIO(decoded), dtype=str)
+          # объединяем с full_eo_list
+          eo_list = pd.read_csv('data/full_eo_list_actual.csv', dtype=str)
+          eo_list_data = pd.merge(df_eo_request_list, eo_list, on = 'eo_code', how = 'left')
+          # объединяем с level_1
+          level_1 = pd.read_csv('data/level_1.csv')
+          eo_list_data = pd.merge(eo_list_data, level_1, on = 'level_1', how = 'left')
+          # объединяем с level_upper
+          level_upper = pd.read_csv('data/level_upper.csv', dtype=str)
+          eo_list_data = pd.merge(eo_list_data, level_upper, on = 'level_upper', how = 'left')
+          # объединяем с level_2
+          level_2 = pd.read_csv('data/level_2_list.csv', dtype=str)
+          eo_list_data = pd.merge(eo_list_data, level_2, on = 'level_2_path', how = 'left')
+          date_columns = ["operation_start_date", "operation_finish_date"]
+          # Колонку со строкой - в дату
+          for column in date_columns:
+            eo_list_data[column] =  eo_list_data[column].astype("datetime64[ns]")
+            # колонку  с datetime - в строку
+            eo_list_data[column] = eo_list_data[column].dt.strftime("%d.%m.%Y")
+          
+          eo_list_data = eo_list_data.loc[:, ['level_1_description', 'Название технического места', 'eo_code', 'eo_description', 'mvz', 'level_2_description', 'operation_start_date','operation_finish_date', 'avearage_day_operation_hours']]
+          eo_list_data.to_csv('data/eo_list_data_temp.csv', index = False)
+          
+   
+          df = df_eo_request_list
+          
+    except Exception as e:
+        print(e)
+        return html.Div([
+            'There was an error processing this file.'
+        ])
+
+    return html.Div([
+        html.H5(filename),
+
+
+        dash_table.DataTable(
+            data=df.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df.columns],
+            filter_action='native',
+            style_header={
+                # 'backgroundColor': 'white',
+                'fontWeight': 'bold'
+            },
+            style_data={
+                'whiteSpace': 'normal',
+                'height': 'auto',
+            },
+            style_cell={'textAlign': 'left'},
+
+        ),
+
+        html.Hr(),  # horizontal line
+
+        # For debugging, display the raw contents provided by the web browser
+        # html.Div('Raw Content'),
+        # html.Pre(contents[0:200] + '...', style={
+        #     'whiteSpace': 'pre-wrap',
+        #     'wordBreak': 'break-all'
+        # })
+    ])
+
+@app.callback(Output('output-data-upload', 'children'),
+              Input('upload-data', 'contents'),
+              State('upload-data', 'filename'),
+              )
+def update_output_(list_of_contents, list_of_names):
+    if list_of_contents is not None:
+        children = [
+            parse_contents(c, n) for c, n in zip(list_of_contents, list_of_names)]
+        
+        return children
 
 
 
 
 if __name__ == "__main__":
     # app.run_server(debug=True)
-    app.run_server(host='0.0.0.0', debug=False)
+    app.run_server(host='0.0.0.0', debug=True)

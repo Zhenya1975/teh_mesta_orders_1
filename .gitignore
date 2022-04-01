@@ -1,4 +1,1 @@
-venv
-*.pyc
-.DS_Store
-.env
+maintanance_job_df.csv
