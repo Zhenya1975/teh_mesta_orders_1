@@ -4,8 +4,8 @@ import pandas as pd
 
 # Create an S3 access object
 s3 = boto3.client('s3',
-         aws_access_key_id="AKIAYKJSBYRAYTRDQBBG",
-         aws_secret_access_key= "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")
+         
+                 )
 
 # "maintanance_jobs_df.csv"
 
