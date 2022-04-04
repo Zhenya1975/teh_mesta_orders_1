@@ -12,9 +12,12 @@ except:
 def upload_file(file_path, file_name):
   y.upload(file_path, file_name, overwrite = True)
 
+# upload_file('temp_files/full_eo_list_actual.csv', 'full_eo_list_actual.csv')
 # Получает общую информацию о диске
 # print(y.get_disk_info())
 # print(list(y.listdir("/")))
+
+      
 # y.mkdir("/test") # Создать папку
 # y.upload("temp_files/maintanance_jobs_df.csv", "maintanance_jobs_df.csv") # Загружает первый файл
 # y.upload("file2.txt", "/test/file2.txt") # Загружает второй файл
@@ -25,6 +28,7 @@ def get_file(file_name):
   except:
     print("не получилось загрузить файл")
 
+get_file("full_eo_list_actual.csv")
 
 def delete_file():
   try:
