@@ -5,13 +5,14 @@ import dash_bootstrap_components as dbc
 from dash_bootstrap_templates import ThemeSwitchAIO
 from dash_bootstrap_templates import load_figure_template
 import datetime
+import yad
 
 import tab_main
 import settings_tab
 import functions
 import func_maintanance_jobs_df_prepare
 import func_ktg_data_prep
-
+import initial_values
 
 # import widget_fig_piechart_downtime_2023
 # import widget_fig_piechart_downtime_2024
@@ -396,6 +397,40 @@ def funct(n_clicks_ktg_table):
   df = pd.read_csv('data/maintanance_job_list_general.csv')
   if n_clicks_ktg_table:
     return dcc.send_data_frame(df.to_excel, "maintanance_job_list_general.xlsx", index=False, sheet_name="maintanance_job_list_general")
+
+####################### ОБРАБОТЧИК ВЫГРУЗКИ полного списка ЕО В EXCEL #####################################
+@app.callback([
+    Output("download_eo", "data"),
+    Output('loading_settings_1', 'parent_style'),
+],
+    [
+      Input("btn_download_eo", "n_clicks")
+    ],
+    prevent_initial_call=True,)
+def funct_download_eo_list_in_settings_tab(n_clicks_eo_table):
+  # загружаем full_eo_list_actual
+  yad.get_file("full_eo_list_actual.csv")
+  full_eo_list_actual_df = pd.read_csv("temp_files/df.csv", low_memory=False)
+  # удаляем загруженный файл
+  yad.delete_file()
+  # выбираем колонки
+  
+  column_list = ['level_1_description','eo_code',	'eo_model_name', 'eo_description',	'teh_mesto', 'mvz',	'eo_class_code',	'eo_class_description','eo_main_class_code',	'eo_main_class_description','teh_mesto_description','operation_start_date',	'avearage_day_operation_hours',	'operation_finish_date', 'constr_type']
+  full_eo_list_actual_df = full_eo_list_actual_df.loc[:, column_list]
+  full_eo_list_actual_df = full_eo_list_actual_df.loc[full_eo_list_actual_df['eo_model_name'] !='no_data']
+  full_eo_list_actual_df = full_eo_list_actual_df.astype({'eo_code':str,'avearage_day_operation_hours': float})
+  full_eo_list_actual_df["operation_start_date"] = pd.to_datetime(full_eo_list_actual_df["operation_start_date"])
+  full_eo_list_actual_df["operation_finish_date"] = pd.to_datetime(full_eo_list_actual_df["operation_finish_date"])
+  full_eo_list_actual_df["operation_start_date"] = full_eo_list_actual_df["operation_start_date"].dt.strftime("%d.%m.%Y")
+  full_eo_list_actual_df["operation_finish_date"] = full_eo_list_actual_df["operation_finish_date"].dt.strftime("%d.%m.%Y")
+  full_eo_list_actual_df.rename(columns=initial_values.rename_columns_dict, inplace=True)
+  # df['Среднесуточная наработка'].apply(lambda x: x.replace(',','.'))
+  # df['Среднесуточная наработка'] = df['Среднесуточная наработка'].astype(float)
+  new_loading_style = loading_style
+  if n_clicks_eo_table:
+    return dcc.send_data_frame(full_eo_list_actual_df.to_excel, "EO.xlsx", index=False, sheet_name="EO"), new_loading_style
+    
+
 
     
 # обработчик радиокнопок calculation_start_status

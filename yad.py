@@ -12,7 +12,7 @@ except:
 def upload_file(file_path, file_name):
   y.upload(file_path, file_name, overwrite = True)
 
-# upload_file('temp_files/full_eo_list_actual.csv', 'full_eo_list_actual.csv')
+# upload_file('temp_files/df.csv', 'full_eo_list_actual.csv')
 # Получает общую информацию о диске
 # print(y.get_disk_info())
 # print(list(y.listdir("/")))
@@ -28,12 +28,12 @@ def get_file(file_name):
   except:
     print("не получилось загрузить файл")
 
-get_file("full_eo_list_actual.csv")
+# get_file("full_eo_list_actual.csv")
 
 def delete_file():
   try:
     os.remove("temp_files/df.csv")
-  except:
-    pass
+  except Exception as e:
+    print("Не удалось удалить файл", e)
 # get_file("maintanance_jo_df.csv")
 # upload_file('data/job_list.csv', 'job_list.csv')

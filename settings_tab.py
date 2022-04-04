@@ -3,7 +3,10 @@ import dash_bootstrap_components as dbc
 # import datetime
 # import json
 # Opening JSON file
-
+loading_style = {
+    # 'position': 'absolute',
+    # 'align-self': 'center'
+                 }
 
 
 def settings_tab():
@@ -14,6 +17,7 @@ def settings_tab():
             dbc.Row([
                 dbc.Col(
                     children=[
+                      dcc.Loading(id='loading_settings_1', parent_style=loading_style),
                       # html.Div([
                       #       html.P(),          
                  
@@ -36,6 +40,21 @@ def settings_tab():
                                               'backgroundColor': '#232632'}, ),
                             dcc.Download(id="download_maintanance_job_list_general")
                         ]),
+                      ############################### КНОПКА ВЫГРУЗКИ ДАННЫХ О ЕО №№№№№№№№№№№№№№№№№№№№
+                      html.Div([
+                            html.P(),
+                            
+                            html.P(),
+                            dbc.Button("Выгрузить ЕО.xlsx", id="btn_download_eo", size="sm",
+                                       style={'marginBottom': '3px',
+                                              'marginTop': '3px',
+                                              'backgroundColor': '#232632'}, ),
+                            dcc.Download(id="download_eo")
+                        ]),
+
+
+
+                      
                       html.Div(
                                     [dbc.Label("Начало расчета"),
                                      dbc.RadioItems(
