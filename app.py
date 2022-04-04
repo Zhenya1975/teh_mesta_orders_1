@@ -427,6 +427,8 @@ def funct_download_eo_list_in_settings_tab(n_clicks_eo_table):
   # df['Среднесуточная наработка'].apply(lambda x: x.replace(',','.'))
   # df['Среднесуточная наработка'] = df['Среднесуточная наработка'].astype(float)
   new_loading_style = loading_style
+  
+  
   if n_clicks_eo_table:
     return dcc.send_data_frame(full_eo_list_actual_df.to_excel, "EO.xlsx", index=False, sheet_name="EO"), new_loading_style
     
