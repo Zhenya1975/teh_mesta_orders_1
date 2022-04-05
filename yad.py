@@ -12,6 +12,8 @@ except:
 def upload_file(file_path, file_name):
   y.upload(file_path, file_name, overwrite = True)
 
+
+  
 # upload_file('temp_files/df.csv', 'full_eo_list_actual.csv')
 # Получает общую информацию о диске
 # print(y.get_disk_info())
@@ -30,10 +32,23 @@ def get_file(file_name):
 
 # get_file("full_eo_list_actual.csv")
 
-def delete_file():
+def delete_file(file_path):
   try:
-    os.remove("temp_files/df.csv")
+    os.remove(file_path)
   except Exception as e:
     print("Не удалось удалить файл", e)
 # get_file("maintanance_jo_df.csv")
 # upload_file('data/job_list.csv', 'job_list.csv')
+
+# upload_file('temp_files/maintanance_jobs_df.csv', 'maintanance_jobs_df.csv')
+# delete_file('temp_files/maintanance_jobs_df.csv')
+
+# upload_file('temp_files/maintanance_jobs_short.csv', 'maintanance_jobs_short.csv')
+# delete_file('temp_files/maintanance_jobs_short.csv')
+
+    
+
+# РЕЕСТР
+# full_eo_list_actual.csv
+# maintanance_jobs_df.csv
+# maintanance_jobs_short.csv

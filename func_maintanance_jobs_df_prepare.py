@@ -1,6 +1,7 @@
 import pandas as pd
 import functions
 import initial_values
+import yad
 from datetime import timedelta
 import json
 first_day_of_selection = initial_values.first_day_of_selection
@@ -20,8 +21,13 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
 
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['100000062398', '100000008673', 'sl_730_1'])]
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['sl_730_1', 'sl_730_2'])]
-  full_eo_list = full_eo_list.loc[full_eo_list['level_1'].isin(['first06'])]
+  # full_eo_list = full_eo_list.loc[full_eo_list['level_1'].isin(['first06'])]
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['sl_730_1'])]
+  full_eo_list = full_eo_list.loc[full_eo_list['constr_type'].isin(['960000001'])]
+  # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['100000036421'])]
+  # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['100000062377'])]
+  # необходимо в списке оставить 
+  print("len(full_eo_list): ", len(full_eo_list))
   
   # выдергиваем из full_eo_list 'eo_code', 'avearage_day_operation_hours'
   full_eo_list_selected = full_eo_list.loc[:, ['eo_code', 'avearage_day_operation_hours']]
@@ -44,6 +50,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   i = 0
   eo_list_len = len(eo_list)
   for eo in eo_list:
+    print("eo:", eo)    
     i = i+1
     print("maintanance_jobs_df_prepare ", i, " из ", eo_list_len)
     eo_maint_plan_by_eo = eo_maint_plan.loc[eo_maint_plan['eo_code'] == eo]
@@ -103,6 +110,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
             maintanance_jobs_result_list.append(temp_dict)
           
     maintanance_jobs_eto_df = pd.DataFrame(maintanance_jobs_result_list)
+    
     # maintanance_jobs_eto_df.to_csv('data/maintanance_jobs_eto_df_delete.csv')
   
     # если у формы нет поглащений другими формами, то расставляем через каждый интервал между формами
@@ -173,7 +181,8 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   
         if maintanance_start_datetime >= operation_start_date and maintanance_start_datetime <= operation_finish_date:
           maintanance_jobs_result_list.append(temp_dict)
-  
+    
+    # print("завершено формирование работ без поглащений")
         
     
     maintanance_jobs_no_ierarhy_df = pd.DataFrame(maintanance_jobs_result_list) 
@@ -255,6 +264,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
     # maintanance_jobs_ierarhy_df.to_csv('data/maintanance_jobs_ierarhy_df_full_list_delete.csv')
     
     maintanance_jobs_df = pd.concat([maintanance_jobs_eto_df, maintanance_jobs_no_ierarhy_df, maintanance_jobs_ierarhy_df], ignore_index=True)
+    # print("сконкотенировались ето, поглащения и непоглащения")
     # maintanance_jobs_df.sort_values(by=['maintanance_start_datetime'], inplace = True)
     # maintanance_jobs_df.to_csv('data/maintanance_jobs_df_before_cut.csv')
     
@@ -274,6 +284,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
     # получаем выборку для расчета моментов проведения работ
     
     eo_maint_plan_tr_data = eo_maint_plan_tr.loc[:, ['eo_maintanance_job_code','maintanance_category_id', 'maintanance_name', 'interval_type', 'interval_motohours', 'tr_service_interval', 'downtime_planned', 'man_hours', 'avearage_day_operation_hours']]
+    # print("eo_maint_plan_tr_data", eo_maint_plan_tr_data.info())
 
     maintanance_start_datetime = eo_start_operation_datetime
     maintanance_jobs_tr_result_list = []
@@ -382,8 +393,13 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   maintanance_jobs_complete_df['maintanance_jobs_id'] = maintanance_jobs_complete_df['eo_code'].astype(str) + "_" + maintanance_jobs_complete_df['maintanance_category_id'].astype(str) + "_" + maintanance_jobs_complete_df['maintanance_start_datetime'].astype(str)
   
   maintanance_jobs_complete_df.sort_values(by=['maintanance_start_datetime'], ignore_index = True, inplace=True)
-    
-  maintanance_jobs_complete_df.to_csv('data/maintanance_jobs_df.csv', index=False)
+
+  # грузим в yad
+  maintanance_jobs_complete_df.to_csv('temp_files/maintanance_jobs_df.csv', index=False)
+  # yad.upload_file('temp_files/maintanance_jobs_df.csv', 'maintanance_jobs_df.csv')
+  # yad.delete_file()
+  
+  
   maintanance_jobs_complete_df['maintanance_start_date'] = maintanance_jobs_complete_df['maintanance_start_datetime'].dt.date
   maintanance_jobs_complete_df['maintanance_finish_date'] = maintanance_jobs_complete_df['maintanance_finish_datetime'].dt.date
   
@@ -396,7 +412,9 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   # print(maintanance_jobs_short['maintanance_start_date'])
   print("расчет maintanance_jobs_df завершен")
   
-  maintanance_jobs_short.to_csv('data/maintanance_jobs_short.csv', decimal = ',')
+  maintanance_jobs_short.to_csv('temp_files/maintanance_jobs_short.csv', decimal = ',', index = False)
+  # yad.upload_file('temp_files/maintanance_jobs_short.csv', 'maintanance_jobs_short.csv')
+  # yad.delete_file()
 
   job_list = ['eto'] + list(set(maintanance_jobs_df['maintanance_category_id']))
   job_list_df = pd.DataFrame(job_list, columns = ['maintanance_category_id'])

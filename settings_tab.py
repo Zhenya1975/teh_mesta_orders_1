@@ -54,7 +54,7 @@ def settings_tab():
 
 
 
-                      
+                      html.Hr(),
                       html.Div(
                                     [dbc.Label("Начало расчета"),
                                      dbc.RadioItems(
