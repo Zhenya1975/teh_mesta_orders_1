@@ -23,8 +23,8 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['sl_730_1', 'sl_730_2'])]
   # full_eo_list = full_eo_list.loc[full_eo_list['level_1'].isin(['first06'])]
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['sl_730_1'])]
-  full_eo_list = full_eo_list.loc[full_eo_list['constr_type'].isin(['960003596'])]
-  full_eo_list.to_csv('data/full_eo_list_delete.csv')
+  # full_eo_list = full_eo_list.loc[full_eo_list['constr_type'].isin(['960003596'])]
+  # full_eo_list.to_csv('data/full_eo_list_delete.csv')
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['100000036421'])]
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['100000062377'])]
   # необходимо в списке оставить 
@@ -407,13 +407,18 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   # print(maintanance_jobs_complete_df.info())
   # короткий файл maintanance_jobs_complete_df
   
-  maintanance_jobs_short = maintanance_jobs_complete_df.loc[:, ['eo_code','maintanance_category_id','maintanance_name', 'maintanance_start_date', 'maintanance_finish_date','days_between_maintanance','next_maintanance_datetime', 'downtime_plan', 'man_hours', 'year', 'month', 'month_year', "month_year_sort_index"]]
+  maintanance_jobs_short = maintanance_jobs_complete_df.loc[:, ['eo_code','eo_model_name','maintanance_category_id','maintanance_name', 'maintanance_start_date', 'maintanance_finish_date','days_between_maintanance','next_maintanance_datetime', 'downtime_plan', 'man_hours', 'year', 'month', 'month_year', "month_year_sort_index", 'level_1']]
 
+  # print('начало подготовки файла eo_month_year.csv')
+  level_1_df = pd.read_csv("data/level_1.csv")
+  maintanance_jobs_short_df =pd.merge(maintanance_jobs_short, level_1_df, on='level_1', how='left')
+
+  
   
   # print(maintanance_jobs_short['maintanance_start_date'])
   print("расчет maintanance_jobs_df завершен")
   
-  maintanance_jobs_short.to_csv('temp_files/maintanance_jobs_short.csv', decimal = ',', index = False)
+  maintanance_jobs_short_df.to_csv('temp_files/maintanance_jobs_short.csv', decimal = ',', index = False)
   # yad.upload_file('temp_files/maintanance_jobs_short.csv', 'maintanance_jobs_short.csv')
   # yad.delete_file()
 
@@ -522,3 +527,10 @@ def count_eo_by_months_and_years():
   eo_number_year_df.to_csv('data/eo_qty_by_years.csv')
 
 # maintanance_jobs_df_prepare("operation_start_date")
+
+def upload_to_yad():
+  # yad.upload_file('temp_files/maintanance_jobs_df.csv', 'maintanance_jobs_df.csv')
+  # yad.delete_file('temp_files/maintanance_jobs_df.csv')
+  yad.upload_file('temp_files/maintanance_jobs_short.csv', 'maintanance_jobs_short.csv')
+  yad.delete_file('temp_files/maintanance_jobs_short.csv')
+# upload_to_yad()

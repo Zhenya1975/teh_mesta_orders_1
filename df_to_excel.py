@@ -2,11 +2,16 @@ import pandas as pd
 
 def df_to_excel(dict_of_dfs):
   """на входе - list с dfs. на выходе - эксель файл в котором во вкладках каждый df"""
-  with pd.ExcelWriter('temp_files/output.xlsx') as writer:
-    for key in dict_of_dfs:
-      sheet_name = key
-      df = dict_of_dfs[key]
+  for key in dict_of_dfs:
+    file_path = "temp_files/" + key + ".xlsx"
+    sheet_name = key
+    df = dict_of_dfs[key]
+    with pd.ExcelWriter(file_path) as writer:
       df.to_excel(writer, sheet_name=sheet_name, index = False)
+  
+  
+    
+    
 
 
 

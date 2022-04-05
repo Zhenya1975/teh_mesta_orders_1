@@ -16,7 +16,9 @@ def output_excel():
   
   
   file_df = yad.get_file("maintanance_jobs_short.csv")
-  maintanance_jobs_short_df = pd.read_csv('temp_files/df.csv', decimal = ",")
+  maintanance_jobs_short_df = pd.read_csv('temp_files/df.csv', decimal = ",", low_memory=False)
+  
+  
   
   maintanance_jobs_short_df = maintanance_jobs_short_df.astype({'eo_code': str})
   maintanance_jobs_short_df["maintanance_start_date"] = pd.to_datetime(maintanance_jobs_short_df["maintanance_start_date"])
@@ -28,17 +30,19 @@ def output_excel():
   # yad.delete_file('temp_files/df.csv')
   # print(maintanance_jobs_short_df.info())
   dict_of_df["Воздействия ТОИР"] = maintanance_jobs_short_df
-
-  # подготовка листа ЕО в эксплуатации
-  full_eo_list = functions.full_eo_list_func()
+  eo_month_year = pd.read_csv('widget_data/eo_month_year.csv')
+  eo_month_year['eo_code'] = eo_month_year['eo_code'].astype(str)
+  dict_of_df["данные для ео по месяцам"] = eo_month_year
   
+  # dict_of_df['ео в экспл данные'] = eo_month_year_group_2
   
+  # print(eo_month_year_group_2)
   
 
   df_to_excel.df_to_excel(dict_of_df)
   
 
-# output_excel()
+output_excel()
 
 
     
