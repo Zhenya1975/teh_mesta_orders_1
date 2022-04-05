@@ -23,7 +23,8 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['sl_730_1', 'sl_730_2'])]
   # full_eo_list = full_eo_list.loc[full_eo_list['level_1'].isin(['first06'])]
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['sl_730_1'])]
-  full_eo_list = full_eo_list.loc[full_eo_list['constr_type'].isin(['960000001'])]
+  full_eo_list = full_eo_list.loc[full_eo_list['constr_type'].isin(['960003596'])]
+  full_eo_list.to_csv('data/full_eo_list_delete.csv')
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['100000036421'])]
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['100000062377'])]
   # необходимо в списке оставить 

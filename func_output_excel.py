@@ -29,7 +29,16 @@ def output_excel():
   # print(maintanance_jobs_short_df.info())
   dict_of_df["Воздействия ТОИР"] = maintanance_jobs_short_df
 
+  # подготовка листа ЕО в эксплуатации
+  full_eo_list = functions.full_eo_list_func()
+  
+  
+  
+
   df_to_excel.df_to_excel(dict_of_df)
   
 
-output_excel()
+# output_excel()
+
+
+    

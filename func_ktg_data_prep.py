@@ -31,6 +31,7 @@ def ktg_data_prep():
   """подготовка данных для расчета ктг"""
   # читаем maintanance_jobs_df
   maintanance_jobs_df = functions.maintanance_jobs_df()
+  # print(maintanance_jobs_df.info())
   # читаем full_eo_list
   full_eo_list = functions.full_eo_list_func()
   # eo_list = ['100000084504', '100000084492']
@@ -54,6 +55,12 @@ def ktg_data_prep():
     hour_df = hour_table_df()
 
     # заполняем колонку calendar_fond единичками в диапазоне срока эксплуатации машины
+    
+    # print("full_eo_list info", full_eo_list.info())
+    print("eo: ", eo)
+    full_eo_list.to_csv('data/full_eo_list_delete_temp.csv')
+    full_eo_list_by_eo = full_eo_list.loc[full_eo_list['eo_code']==eo]
+    # print(full_eo_list_by_eo)
     maintanance_start_datetime = full_eo_list.loc[full_eo_list['eo_code'] == eo, ['operation_start_date']].values[0][0]
     maintanance_finish_datetime = full_eo_list.loc[full_eo_list['eo_code'] == eo, ['operation_finish_date']].values[0][0]
 
