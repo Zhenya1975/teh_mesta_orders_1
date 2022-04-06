@@ -58,7 +58,7 @@ def ktg_data_prep():
     
     # print("full_eo_list info", full_eo_list.info())
     print("eo: ", eo)
-    full_eo_list.to_csv('data/full_eo_list_delete_temp.csv')
+
     full_eo_list_by_eo = full_eo_list.loc[full_eo_list['eo_code']==eo]
     # print(full_eo_list_by_eo)
     maintanance_start_datetime = full_eo_list.loc[full_eo_list['eo_code'] == eo, ['operation_start_date']].values[0][0]
@@ -121,9 +121,9 @@ def ktg_data_prep():
     # заполняем пустые ячейки нулями
     hour_df.fillna(0, inplace=True)
 
-    # hour_df.to_csv('data/hour_df_temp_delete.csv')  
+ 
     job_list = list(pd.read_csv('data/job_list.csv')['maintanance_category_id'])
-    # hour_df.to_csv('data/hour_df_delete.csv')
+
 
 
     columns = ['calendar_fond', 'downtime', 'eto'] + maint_category_list
