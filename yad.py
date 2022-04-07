@@ -31,7 +31,7 @@ def get_file(file_name):
     print("не получилось загрузить файл")
 
 # get_file("maintanance_jobs_short.csv")
-get_file("full_eo_list_actual.csv")
+# get_file("full_eo_list_actual.csv")
 
 
 

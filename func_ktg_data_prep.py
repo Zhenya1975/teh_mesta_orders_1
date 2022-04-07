@@ -34,6 +34,7 @@ def ktg_data_prep():
   # print(maintanance_jobs_df.info())
   # читаем full_eo_list
   full_eo_list = functions.full_eo_list_func()
+  # full_eo_list = full_eo_list.loc[full_eo_list['strategy_id']==6]
   # eo_list = ['100000084504', '100000084492']
   # eo_list = ['100000065619']
 
@@ -59,8 +60,7 @@ def ktg_data_prep():
     # print("full_eo_list info", full_eo_list.info())
     print("eo: ", eo)
 
-    full_eo_list_by_eo = full_eo_list.loc[full_eo_list['eo_code']==eo]
-    # print(full_eo_list_by_eo)
+
     maintanance_start_datetime = full_eo_list.loc[full_eo_list['eo_code'] == eo, ['operation_start_date']].values[0][0]
     maintanance_finish_datetime = full_eo_list.loc[full_eo_list['eo_code'] == eo, ['operation_finish_date']].values[0][0]
 

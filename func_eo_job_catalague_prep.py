@@ -73,8 +73,8 @@ def eo_job_catologue():
       tr_downtime_delta = (tr_downtime_finish_value -tr_downtime_start_value) / total_qty_of_tr
       """tr_downtime_delta -пророст значения простоя на следующем ТР"""
       
-      tr_service_interval = 0
-      """tr_service_interval - текущее значение межсервисного инетервала в цикле"""
+      tr_service_interval = tr_start_motohour
+      """tr_service_interval - текущее значение межсервисного интервала в цикле"""
       
       tr_man_hours_delta = (tr_man_hours_finish_value - tr_man_hours_start_value) / total_qty_of_tr
       """tr_man_hours_delta -пророст значения трудозатрат на следующем ТР"""
@@ -123,5 +123,7 @@ def eo_job_catologue():
   # return tr_data_df
   # eo_maintanance_plan_df_tr.to_csv('data/eo_maintanance_plan_df_delete.csv')
   print("отработал func_eo_job_catalague_prep.py")
-  
+
+
 # eo_job_catologue()
+# python eo_job_catologue()

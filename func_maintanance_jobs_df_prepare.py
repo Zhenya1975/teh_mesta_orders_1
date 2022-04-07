@@ -16,8 +16,10 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   with open('saved_filters.json', 'r') as openfile:
       # Reading from json file
       saved_filters_dict = json.load(openfile)
-  calculation_start_mode = saved_filters_dict["calculation_start_status_value"]
+  # calculation_start_mode = saved_filters_dict["calculation_start_status_value"]
 
+  # full_eo_list = full_eo_list.loc[full_eo_list['strategy_id'].isin([6])]
+  full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['sl_730_1'])]
 
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['100000062398', '100000008673', 'sl_730_1'])]
   # full_eo_list = full_eo_list.loc[full_eo_list['eo_code'].isin(['sl_730_1', 'sl_730_2'])]
@@ -72,6 +74,8 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
       
       operation_start_date = getattr(row, "operation_start_date")
       #if initial_values.initial_start_status == "operation_start_date":
+      # print("calculation_start_mode:", calculation_start_mode)
+      
       if calculation_start_mode == 'operation_start_date':
         start_point = operation_start_date
       else:
@@ -87,6 +91,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
       # если у нас ежедневное ТО, то это особый случай. переписываем точку старта
       start_point = initial_values.eto_start_point
       maintanance_start_datetime = start_point
+      
       while maintanance_start_datetime < last_day_of_selection:
         temp_dict = {}
         temp_dict['maintanance_job_code'] = maintanance_job_code
@@ -96,8 +101,9 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
         temp_dict['maint_interval'] = 24
         temp_dict['downtime_plan'] = plan_downtime
         temp_dict['man_hours'] = man_hours
+        maintanance_start_datetime = maintanance_start_datetime + timedelta(hours=24)
         temp_dict['maintanance_start_datetime'] = maintanance_start_datetime
-  
+        
         maintanance_finish_datetime = maintanance_start_datetime + timedelta(hours=plan_downtime)
         temp_dict['maintanance_finish_datetime'] = maintanance_finish_datetime
         temp_dict['maintanance_date'] = maintanance_start_datetime.date()
@@ -105,7 +111,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
         temp_dict['maintanance_name'] = maintanance_name
         temp_dict['avearage_day_operation_hours'] = avearage_day_operation_hours
   
-        maintanance_start_datetime = maintanance_start_datetime + timedelta(hours=24)
+        
   
         if maintanance_start_datetime >= operation_start_date and maintanance_start_datetime <= operation_finish_date:
             maintanance_jobs_result_list.append(temp_dict)
@@ -119,6 +125,8 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
     eo_maint_plan_no_ierarhy = eo_maint_plan_by_eo.loc[eo_maint_plan['maintanance_category_id'] != 'eto']
     eo_maint_plan_no_ierarhy = eo_maint_plan_no_ierarhy.loc[eo_maint_plan['go_interval'] == 'not']
     eo_maint_plan_no_ierarhy = eo_maint_plan_no_ierarhy.loc[eo_maint_plan['tr_category'] == 'not']
+    
+    
     # eo_maint_plan_no_ierarhy.to_csv('data/eo_maint_plan_no_ierarhy_delete.csv')
     # Итериеруемся по этой выборке
     maintanance_jobs_result_list = []
@@ -130,7 +138,9 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
       man_hours = getattr(row, "man_hours")
       operation_start_date = getattr(row, "operation_start_date")
       operation_finish_date = getattr(row, "operation_finish_date")
-      if initial_values.initial_start_status == "operation_start_date":
+      
+      
+      if calculation_start_mode == 'operation_start_date':
         start_point = operation_start_date
       else:
         start_point =initial_values.start_point
@@ -143,11 +153,15 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
       go_interval = getattr(row, "go_interval")
   
       maintanance_start_datetime = start_point
+      current_motohours = 0
       while maintanance_start_datetime < last_day_of_selection:
         temp_dict = {}
         temp_dict['maintanance_job_code'] = maintanance_job_code
         temp_dict['eo_code'] = eo_code
         temp_dict['interval_motohours'] = standard_interval_motohours
+        #  показания счетчика моточасов
+        current_motohours = current_motohours + standard_interval_motohours
+        temp_dict['motohours_counter'] = current_motohours
         temp_dict['interval_type'] = interval_type
         temp_dict['maint_interval'] = standard_interval_motohours
         temp_dict['downtime_plan'] = plan_downtime
@@ -164,13 +178,15 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   
         ############## В зависимости от типа межсервисного интервала определяем момент следующего ТО ##################
         next_maintanance_datetime = maintanance_start_datetime + timedelta(hours=calendar_interval_between_maint) + timedelta(hours=plan_downtime)
-        maintanance_start_datetime = next_maintanance_datetime
+        days_between_maintanance = next_maintanance_datetime - maintanance_start_datetime
+        
+        maintanance_start_datetime = maintanance_start_datetime + timedelta(hours=calendar_interval_between_maint) + timedelta(hours=plan_downtime)
         temp_dict['maintanance_start_datetime'] = maintanance_start_datetime
         maintanance_finish_datetime = maintanance_start_datetime + timedelta(hours=plan_downtime)
         temp_dict['maintanance_finish_datetime'] = maintanance_finish_datetime
         temp_dict['maintanance_start_date'] = maintanance_start_datetime.date()
         
-        days_between_maintanance = next_maintanance_datetime - maintanance_start_datetime
+        
         # Если интервал задан в часах, то переписываем значения
         if interval_type == 'hrs':
           next_maintanance_datetime = maintanance_start_datetime + timedelta(
@@ -205,7 +221,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
       man_hours = getattr(row, "man_hours")
       operation_start_date = getattr(row, "operation_start_date")
       operation_finish_date = getattr(row, "operation_finish_date")
-      if initial_values.initial_start_status == "operation_start_date":
+      if calculation_start_mode == 'operation_start_date':
         start_point = operation_start_date
       else:
         start_point =initial_values.start_point
@@ -252,6 +268,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
         temp_dict['maintanance_name'] = maintanance_name
   
         temp_dict['maint_interval'] = maintanance_interval_temp
+        temp_dict['motohours_counter'] = maintanance_interval_temp
         temp_dict['pass_interval_list'] = pass_interval
         temp_dict['go_interval_list'] = go_interval
         next_maintanance_datetime = maintanance_start_datetime + timedelta(
@@ -267,7 +284,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
     maintanance_jobs_df = pd.concat([maintanance_jobs_eto_df, maintanance_jobs_no_ierarhy_df, maintanance_jobs_ierarhy_df], ignore_index=True)
     # print("сконкотенировались ето, поглащения и непоглащения")
     # maintanance_jobs_df.sort_values(by=['maintanance_start_datetime'], inplace = True)
-    # maintanance_jobs_df.to_csv('data/maintanance_jobs_df_before_cut.csv')
+    # maintanance_jobs_df.to_csv('data/maintanance_jobs_df_without_tr_delete.csv')
     
     ################# ОБРАБОТКА ЗАПИСЕЙ С ТР ########################
     eo_maint_plan_tr = eo_maint_plan_by_eo.loc[eo_maint_plan['tr_category'] == 'tr']
@@ -286,7 +303,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
     
     eo_maint_plan_tr_data = eo_maint_plan_tr.loc[:, ['eo_maintanance_job_code','maintanance_category_id', 'maintanance_name', 'interval_type', 'interval_motohours', 'tr_service_interval', 'downtime_planned', 'man_hours', 'avearage_day_operation_hours']]
     # print("eo_maint_plan_tr_data", eo_maint_plan_tr_data.info())
-
+    # eo_maint_plan_tr_data.to_csv('data/eo_maint_plan_tr_data_initial_data_for_tr_calc.csv')
     maintanance_start_datetime = eo_start_operation_datetime
     maintanance_jobs_tr_result_list = []
     
@@ -311,6 +328,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
       temp_dict['maintanance_category_id'] = maintanance_category_id
       
       temp_dict['interval_type'] = interval_type
+      temp_dict['motohours_counter'] = tr_service_interval
       
       temp_dict['interval_motohours'] = interval_motohours
       temp_dict['maint_interval'] = interval_motohours
@@ -350,12 +368,11 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
         maintanance_jobs_tr_result_list.append(temp_dict)
     
     maintanance_jobs_tr_df = pd.DataFrame(maintanance_jobs_tr_result_list)
+    # maintanance_jobs_tr_df.to_csv('data/maintanance_jobs_tr_df_delete.csv')
     # конкатинируем получившийся датафрейм в общий
     maintanance_jobs_df = pd.concat([maintanance_jobs_df, maintanance_jobs_tr_df], ignore_index=True)
     
-    
-    
-    # maintanance_jobs_tr_df.to_csv('data/maintanance_jobs_tr_df_delete.csv')
+    # maintanance_jobs_df.to_csv('data/maintanance_jobs_df_concat_all_jobs_delete.csv')
     ########################## Конец расчета ТР #########################
     
     
@@ -407,7 +424,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
   # print(maintanance_jobs_complete_df.info())
   # короткий файл maintanance_jobs_complete_df
   
-  maintanance_jobs_short = maintanance_jobs_complete_df.loc[:, ['eo_code','eo_model_name','maintanance_category_id','maintanance_name', 'maintanance_start_date', 'maintanance_finish_date','days_between_maintanance','next_maintanance_datetime', 'downtime_plan', 'man_hours', 'year', 'month', 'month_year', "month_year_sort_index", 'level_1']]
+  maintanance_jobs_short = maintanance_jobs_complete_df.loc[:, ['eo_code','eo_model_name','maintanance_category_id','maintanance_name','maintanance_start_datetime',	'maintanance_finish_datetime', 'maintanance_start_date', 'maintanance_finish_date','days_between_maintanance','next_maintanance_datetime', 'downtime_plan', 'man_hours', 'year', 'month', 'month_year', "month_year_sort_index", 'motohours_counter','level_1']]
 
   # print('начало подготовки файла eo_month_year.csv')
   level_1_df = pd.read_csv("data/level_1.csv")
@@ -482,7 +499,7 @@ def maintanance_jobs_df_prepare(calculation_start_mode):
 
 
 def count_eo_by_months_and_years():
-  maintanance_jobs_short = pd.read_csv('data/maintanance_jobs_short.csv', decimal = ',')
+  maintanance_jobs_short = pd.read_csv('temp_files/maintanance_jobs_short.csv', decimal = ',')
   maintanance_jobs_short['count'] = 1
   month_year_list = list(set(maintanance_jobs_short['month_year']))
   result_list = []
@@ -525,12 +542,24 @@ def count_eo_by_months_and_years():
   # print(eo_number_df)
   
   eo_number_year_df.to_csv('data/eo_qty_by_years.csv')
+  print("пересчитаны data/eo_qty_by_years.csv и data/eo_qty_by_month.csv")
 
-# maintanance_jobs_df_prepare("operation_start_date")
+
+
 
 def upload_to_yad():
-  # yad.upload_file('temp_files/maintanance_jobs_df.csv', 'maintanance_jobs_df.csv')
-  # yad.delete_file('temp_files/maintanance_jobs_df.csv')
-  yad.upload_file('temp_files/maintanance_jobs_short.csv', 'maintanance_jobs_short.csv')
-  yad.delete_file('temp_files/maintanance_jobs_short.csv')
+  try:
+    yad.upload_file('temp_files/maintanance_jobs_df.csv', 'maintanance_jobs_df.csv')
+    yad.delete_file('temp_files/maintanance_jobs_df.csv')
+  except Exception as e:
+    print("не получилось загрузить temp_files/maintanance_jobs_df.csv", e)
+  try:
+    yad.upload_file('temp_files/maintanance_jobs_short.csv', 'maintanance_jobs_short.csv')
+    yad.delete_file('temp_files/maintanance_jobs_short.csv')
+  except Exception as e:
+    print("не получилось загрузить temp_files/maintanance_jobs_short.csv", e)
+
+
+maintanance_jobs_df_prepare("operation_start_date")
+# count_eo_by_months_and_years()
 # upload_to_yad()

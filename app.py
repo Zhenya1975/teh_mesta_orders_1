@@ -559,7 +559,8 @@ def parse_contents(contents, filename):
               print("maintanance_job_list_general загружен")
               functions.pass_interval_fill()
               functions.maintanance_category_prep()
-              functions.eo_job_catologue()
+              # functions.eo_job_catologue()
+              
               print("eo_job_catologue обновлен")
               functions.job_codes_prep()
               print("job_codes обновлен")
