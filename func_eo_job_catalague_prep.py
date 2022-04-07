@@ -30,7 +30,7 @@ def eo_job_catologue():
                             'tr_category', 'tr_man_hours_start_value', 'tr_man_hours_finish_value',	'tr_downtime_start_value',	'tr_downtime_finish_value',	'tr_start_motohour',	'tr_finish_motohour',
                             'interval_type',
                             'interval_motohours', 'downtime_planned', 'man_hours', 'pass_interval', 'go_interval',
-                            'operation_start_date', 'operation_finish_date']].reset_index(drop=True)
+                            ]].reset_index(drop=True)
   # убираем строки у которых в поле tr_category есть текст tr 
   
   eo_maintanance_plan_df_no_tr = eo_maintanance_plan_df.loc[eo_maintanance_plan_df['tr_category'] != 'tr']
@@ -125,5 +125,5 @@ def eo_job_catologue():
   print("отработал func_eo_job_catalague_prep.py")
 
 
-# eo_job_catologue()
+eo_job_catologue()
 # python eo_job_catologue()

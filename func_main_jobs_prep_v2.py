@@ -17,6 +17,7 @@ def hours_df_prep(eo, operation_start_datetime, operation_finish_datetime):
     current_hours_datetime = current_hours_datetime + timedelta(hours=1)
     temp_dict['eo_motohour_hour'] = current_hours_datetime
     temp_dict["motohour_hour_status"] = 1
+    temp_dict['downtime_status'] = 0
     hour_df_data.append(temp_dict)
 
   motohours_hour_df = pd.DataFrame(hour_df_data)
@@ -29,8 +30,7 @@ def eo_job_catologue_df_func():
   """чтение eo_job_catologue_df"""
   eo_job_catologue_df = pd.read_csv('temp_files/eo_job_catologue.csv', dtype=str)
   eo_job_catologue_df["downtime_planned"] = eo_job_catologue_df["downtime_planned"].astype('float')
-  eo_job_catologue_df["operation_start_date"] = pd.to_datetime(eo_job_catologue_df["operation_start_date"])
-  eo_job_catologue_df["operation_finish_date"] = pd.to_datetime(eo_job_catologue_df["operation_finish_date"])
+  
 
   return eo_job_catologue_df
 
@@ -39,11 +39,15 @@ def list_of_maintanance_forms_sorted():
   # создаем список форм ТОиР. eo, номинальная наработка с начала эксплуатации, простой, тип ТОИР
   # итерируемся по строкам файла eo_job_catologue_df
   full_eo_list = functions.full_eo_list_func()
-  full_eo_list_selected = full_eo_list.loc[:, ['eo_code', 'avearage_day_operation_hours']]
+  full_eo_list_selected = full_eo_list.loc[:, ['eo_code', 'avearage_day_operation_hours', 'operation_start_date', 'operation_finish_date']]
+  # print("full_eo_list_selected info", full_eo_list_selected.info())
+  # eo_job_catologue_df["operation_start_date"] = pd.to_datetime(eo_job_catologue_df["operation_start_date"])
+  # eo_job_catologue_df["operation_finish_date"] = pd.to_datetime(eo_job_catologue_df["operation_finish_date"])
+  
   eo_maint_plan = pd.merge(eo_job_catologue_df, full_eo_list_selected, on='eo_code', how='left')
   
   eo_list = list(set(eo_maint_plan['eo_code']))
-  print("eo_list", eo_list)
+  # print("eo_list", eo_list)
   i = 0
   eo_list_len = len(eo_list)
   for eo in eo_list:
@@ -111,25 +115,43 @@ def list_of_maintanance_forms_sorted():
     maint_sorted_df.to_csv('data/maint_forms_sorted_df.csv')
 
     # открываем почасовую таблицу и итерируясь по списку форм заполняем нулями строки где есть работы
+  
+    
     hours_df = hours_df_prep(eo, operation_start_date, operation_finish_date)
+    # print("hours_df", hours_df)
     # коэффициент, кооторый дает количество календарных часов при умножении на значение наработки по счетчику
     motohours_koef = avearage_day_operation_hours/24
     for row in maint_sorted_df.itertuples():
       maint_interval = getattr(row, "maint_interval")
       downtime = getattr(row, "downtime")
       calendar_interval_hours = maint_interval/motohours_koef
-      maintanance_start_datetime = operation_start_date + timedelta(hours = calendar_interval_hours)
-      maintanance_finish_datetime = maintanance_start_datetime + timedelta(hours = downtime)
-      # получаем диапазон в таблице часов
-      model_hours_df_cut_by_maint_job = hours_df.loc[
-          (hours_df['eo_motohour_hour'] >= maintanance_start_datetime) &
-          (hours_df['eo_motohour_hour'] <= maintanance_finish_datetime)]
-      indexes_maint_job = model_hours_df_cut_by_maint_job.index.values
 
-      # записываем ноль в поле motohour_hour_status - значит в этом интервале счетчик моточасов не работает
-      hours_df.loc[indexes_maint_job, ['motohour_hour_status']] = 0
-      
+      # текущая сумма единичек по полю motohour_hour_status - это интервал в часах от момента начала эксплуатации
+      # motohour_hour_status_current_sum = hours_df['motohour_hour_status'].sum()
+      # print(hours_df)
+      hours_df['cumsum'] = hours_df['motohour_hour_status'].cumsum()
+      # строка, в которой значение счетчика  моточасов равно текущему значению наработки
+      try:
+        hours_df_selected = hours_df.loc[hours_df['cumsum']==maint_interval, ['eo_motohour_hour']]
+        maintanance_start_datetime = hours_df_selected.iloc[0]['eo_motohour_hour']
+  
+        # maintanance_start_datetime = operation_start_date + timedelta(hours = calendar_interval_hours)
+        maintanance_finish_datetime = maintanance_start_datetime + timedelta(hours = downtime)
+        # получаем диапазон в таблице часов
+        model_hours_df_cut_by_maint_job = hours_df.loc[
+            (hours_df['eo_motohour_hour'] > maintanance_start_datetime) &
+            (hours_df['eo_motohour_hour'] <= maintanance_finish_datetime)]
+        indexes_maint_job = model_hours_df_cut_by_maint_job.index.values
+       
+        
+        # записываем ноль в поле motohour_hour_status - значит в этом интервале счетчик моточасов не работает
+        hours_df.loc[indexes_maint_job, ['motohour_hour_status']] = 0
+        hours_df.loc[indexes_maint_job, ['downtime_status']] = 1
+      except:
+        pass
+       
   hours_df.to_csv("temp_files/hours_df_delete.csv")
+  ## а что если проверить
       
 
 
