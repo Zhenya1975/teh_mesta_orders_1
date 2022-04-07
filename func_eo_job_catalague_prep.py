@@ -125,5 +125,5 @@ def eo_job_catologue():
   print("отработал func_eo_job_catalague_prep.py")
 
 
-eo_job_catologue()
+# eo_job_catologue()
 # python eo_job_catologue()
