@@ -560,6 +560,6 @@ def upload_to_yad():
     print("не получилось загрузить temp_files/maintanance_jobs_short.csv", e)
 
 
-maintanance_jobs_df_prepare("operation_start_date")
+# maintanance_jobs_df_prepare("operation_start_date")
 # count_eo_by_months_and_years()
 # upload_to_yad()
