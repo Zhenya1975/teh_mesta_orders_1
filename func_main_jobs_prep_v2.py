@@ -18,6 +18,10 @@ def hours_df_prep(eo, operation_start_datetime, operation_finish_datetime):
     temp_dict['eo_motohour_hour'] = current_hours_datetime
     temp_dict["motohour_hour_status"] = 1
     temp_dict['downtime_status'] = 0
+    temp_dict['calendar_fond'] = 1
+    temp_dict['year'] = current_hours_datetime.year
+    temp_dict['month'] = current_hours_datetime.month
+    temp_dict['hour'] = current_hours_datetime.hour
     hour_df_data.append(temp_dict)
 
   motohours_hour_df = pd.DataFrame(hour_df_data)
@@ -78,8 +82,7 @@ def list_of_maintanance_forms_sorted():
       interval_motohours = getattr(row, "interval_motohours")
       tr_service_interval = getattr(row, "tr_service_interval")
 
-    
-      # ищем работы с поглащениями
+   
       # создаем строки, расставляя межсервисные интервалы
       
       # 1. если попалась строка с поглащениями
@@ -124,7 +127,7 @@ def list_of_maintanance_forms_sorted():
         temp_dict['man_hours'] = man_hours
         result_list_df.append(temp_dict)
       
-
+      
     maint_sorted_df = pd.DataFrame(result_list_df)
     maint_sorted_df.sort_values(['maint_interval', 'downtime'], inplace = True)
     maint_sorted_df.to_csv('data/maint_forms_sorted_df.csv', index = False)
@@ -137,6 +140,8 @@ def list_of_maintanance_forms_sorted():
 def maint_records_generator():
   # открываем почасовую таблицу и итерируясь по списку форм заполняем нулями строки где есть работы  
   # В maintanance_jobs_df будем создавать записи с работами
+  
+  eo_job_catologue_df = functions.eo_job_catologue_df_func()
   maintanance_jobs_df_list = []
   full_eo_list = functions.full_eo_list_func()
   full_eo_list_selected = full_eo_list.loc[:, ['eo_code', 'avearage_day_operation_hours', 'operation_start_date', 'operation_finish_date']]
@@ -145,12 +150,16 @@ def maint_records_generator():
   maint_sorted_df = pd.read_csv('data/maint_forms_sorted_df.csv')
   maint_sorted_df = maint_sorted_df.loc[maint_sorted_df['eo_code'].isin(["sl_730_1"])]
   # итерируемся по списку машин
-  i = 0
+  eo_list = list(set(maint_sorted_df['eo_code']))
   eo_len = len(full_eo_list_selected)
+  ktg_data_df = pd.DataFrame()
+  i = 0
+  # итерируемся по списку машин
   for row in full_eo_list_selected.itertuples():
     i = i+1
     eo_code = getattr(row, "eo_code")
-    # print("формирование maintanance_jobs_df. Машина ", i, " из", eo_len,". ео:", eo_code)
+    print("формирование maintanance_jobs_df. Машина ", i, " из", eo_len,". ео:", eo_code)
+    
     operation_start_date = getattr(row, "operation_start_date")
     operation_finish_date = getattr(row, "operation_finish_date")
   
@@ -158,6 +167,20 @@ def maint_records_generator():
     # print("hours_df", hours_df)
     # коэффициент, кооторый дает количество календарных часов при умножении на значение наработки по счетчику
     # motohours_koef = avearage_day_operation_hours/24
+    # заполняем данные о ето
+    # значение простоя и трудозатрат на ето для текущей машины
+    eto_df_data = eo_job_catologue_df.loc[eo_job_catologue_df['eo_code']==eo_code] 
+    eto_df_data = eto_df_data.loc[eto_df_data['maintanance_category_id']=='eto']
+    
+    eo_downtime = eto_df_data.iloc[0]['downtime_planned']
+    # eo_manhours = eto_df_data.iloc[0]['man_hours']
+    # режем hours-df на 8 утра
+    hours_df_eto_selection = hours_df.loc[hours_df['hour']==8]
+    indexes_hours_df_eto_selection = hours_df_eto_selection.index.values
+      
+    # записываем значениt простоя на ето
+    hours_df.loc[indexes_hours_df_eto_selection, ['downtime_status']] = eo_downtime
+
     
     # print(maint_sorted_df.info())
     for row in maint_sorted_df.itertuples():
@@ -170,8 +193,9 @@ def maint_records_generator():
       
       maint_interval = getattr(row, "maint_interval")
       downtime = getattr(row, "downtime")
-      man_hours = getattr(row, "downtime")
+      man_hours = getattr(row, "man_hours")
       hours_df['cumsum'] = hours_df['motohour_hour_status'].cumsum()
+      # print(hours_df.info())
       # строка, в которой значение счетчика  моточасов равно текущему значению наработки
       try:
         hours_df_selected = hours_df.loc[hours_df['cumsum']==maint_interval, ['eo_motohour_hour', 'cumsum']]
@@ -210,8 +234,10 @@ def maint_records_generator():
         hours_df.loc[indexes_maint_job, ['downtime_status']] = 1
       except:
         pass
-       
+    month_year_groupped_df = hours_df.groupby(['eo', 'year', 'month'], as_index = False)[['calendar_fond', 'downtime_status']].sum()
+    ktg_data_df = pd.concat([ktg_data_df, month_year_groupped_df])
   
+  ktg_data_df.to_csv('temp_files/ktg_data_df.csv', index = False)
   maintanance_jobs_df = pd.DataFrame(maintanance_jobs_df_list)
   maintanance_jobs_df = maintanance_jobs_df.copy()
   full_eo_list_for_merge = full_eo_list.loc[:,['eo_code', 'level_1_description', 'eo_class_description','eo_model_name', 'eo_description']]

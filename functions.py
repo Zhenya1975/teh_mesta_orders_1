@@ -96,8 +96,8 @@ def eo_job_catologue_df_func():
     """чтение eo_job_catologue_df"""
     eo_job_catologue_df = pd.read_csv('data/eo_job_catologue.csv', dtype=str)
     eo_job_catologue_df["downtime_planned"] = eo_job_catologue_df["downtime_planned"].astype('float')
-    eo_job_catologue_df["operation_start_date"] = pd.to_datetime(eo_job_catologue_df["operation_start_date"])
-    eo_job_catologue_df["operation_finish_date"] = pd.to_datetime(eo_job_catologue_df["operation_finish_date"])
+    # eo_job_catologue_df["operation_start_date"] = pd.to_datetime(eo_job_catologue_df["operation_start_date"])
+    # eo_job_catologue_df["operation_finish_date"] = pd.to_datetime(eo_job_catologue_df["operation_finish_date"])
 
     return eo_job_catologue_df
 
