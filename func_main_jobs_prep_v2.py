@@ -142,7 +142,7 @@ def maint_records_generator():
   # В maintanance_jobs_df будем создавать записи с работами
   
   eo_job_catologue_df = functions.eo_job_catologue_df_func()
-  maintanance_jobs_df_list = []
+  
   full_eo_list = functions.full_eo_list_func()
   full_eo_list_selected = full_eo_list.loc[:, ['eo_code', 'avearage_day_operation_hours', 'operation_start_date', 'operation_finish_date']]
   
@@ -153,10 +153,12 @@ def maint_records_generator():
   eo_list = list(set(maint_sorted_df['eo_code']))
   eo_len = len(full_eo_list_selected)
   ktg_data_df = pd.DataFrame()
+  maintanance_jobs_df_total_data = pd.DataFrame()
   i = 0
   # итерируемся по списку машин
   for row in full_eo_list_selected.itertuples():
     i = i+1
+    maintanance_jobs_df_list = []
     eo_code = getattr(row, "eo_code")
     print("формирование maintanance_jobs_df. Машина ", i, " из", eo_len,". ео:", eo_code)
     
@@ -171,6 +173,10 @@ def maint_records_generator():
     # значение простоя и трудозатрат на ето для текущей машины
     eto_df_data = eo_job_catologue_df.loc[eo_job_catologue_df['eo_code']==eo_code] 
     eto_df_data = eto_df_data.loc[eto_df_data['maintanance_category_id']=='eto']
+    maintanance_job_code = eto_df_data.iloc[0]['eo_maintanance_job_code']
+    maintanance_category_id = eto_df_data.iloc[0]['maintanance_category_id']
+    maintanance_name = eto_df_data.iloc[0]['maintanance_name']
+    man_hours = eto_df_data.iloc[0]['man_hours']
     
     eo_downtime = eto_df_data.iloc[0]['downtime_planned']
     # eo_manhours = eto_df_data.iloc[0]['man_hours']
@@ -178,11 +184,29 @@ def maint_records_generator():
     hours_df_eto_selection = hours_df.loc[hours_df['hour']==8]
     indexes_hours_df_eto_selection = hours_df_eto_selection.index.values
       
-    # записываем значениt простоя на ето
+    # записываем значение простоя на ето
     hours_df.loc[indexes_hours_df_eto_selection, ['downtime_status']] = eo_downtime
-
+    ###########################################################################################
+    ################# СОЗДАЕМ ЗАПИСИ О ЕТО В maintanance_jobs_df
+    ##############################################################################################
+    maintanance_start_datetime_eto_list = list(hours_df_eto_selection['eo_motohour_hour'])
+    maintanance_jobs_df_eto = pd.DataFrame(maintanance_start_datetime_eto_list, columns = ['maintanance_start_datetime'])
     
-    # print(maint_sorted_df.info())
+    maintanance_jobs_df_eto['maintanance_finish_datetime'] = maintanance_jobs_df_eto['maintanance_start_datetime'] + timedelta(hours = eo_downtime)
+    maintanance_jobs_df_eto['maintanance_job_code'] = maintanance_job_code
+    maintanance_jobs_df_eto['eo_code'] = eo_code
+    maintanance_jobs_df_eto['maintanance_category_id'] = maintanance_category_id
+    maintanance_jobs_df_eto['maintanance_name'] = maintanance_name
+    maintanance_jobs_df_eto['interval_motohours'] = 24
+    maintanance_jobs_df_eto['man_hours'] = man_hours
+    maintanance_jobs_df_eto['downtime'] = eo_downtime
+
+    # добавляем данные по eto в общую таблицу 
+    maintanance_jobs_df_total_data = pd.concat([maintanance_jobs_df_total_data, maintanance_jobs_df_eto])
+    # print(maintanance_jobs_df_eto)
+    print("Данные eto для ео ", eo_code, 'добавлены в модель')
+    ####################################################################################################
+    ####################################################################################################
     for row in maint_sorted_df.itertuples():
       
       maintanance_job_code = getattr(row, "maintanance_job_code")
@@ -236,17 +260,27 @@ def maint_records_generator():
         pass
     month_year_groupped_df = hours_df.groupby(['eo', 'year', 'month'], as_index = False)[['calendar_fond', 'downtime_status']].sum()
     ktg_data_df = pd.concat([ktg_data_df, month_year_groupped_df])
+
+    maintanance_jobs_df = pd.DataFrame(maintanance_jobs_df_list)
+    # добавляем данные по eto в общую таблицу 
+    maintanance_jobs_df_total_data = pd.concat([maintanance_jobs_df_total_data, maintanance_jobs_df])
+
+  
+    print("Данные для ео ", eo_code, 'добавлены в модель')
   
   ktg_data_df.to_csv('temp_files/ktg_data_df.csv', index = False)
-  maintanance_jobs_df = pd.DataFrame(maintanance_jobs_df_list)
-  maintanance_jobs_df = maintanance_jobs_df.copy()
+  
+
   full_eo_list_for_merge = full_eo_list.loc[:,['eo_code', 'level_1_description', 'eo_class_description','eo_model_name', 'eo_description']]
   # print(full_eo_list_for_merge.info())
   # print("maintanance_jobs_df", maintanance_jobs_df.info())
   
-  maintanance_jobs_df_ = pd.merge(maintanance_jobs_df, full_eo_list_for_merge, on = 'eo_code', how='left')
-  maintanance_jobs_df_.to_csv('temp_files/maintanance_jobs_df_temp.csv', decimal=",")
-  hours_df.to_csv("temp_files/hours_df_delete.csv")
+  maintanance_jobs_df_ = pd.merge(maintanance_jobs_df_total_data, full_eo_list_for_merge, on = 'eo_code', how='left')
+  maintanance_jobs_df_.sort_values(['maintanance_start_datetime'], inplace=True)
+  maintanance_jobs_df_['man_hours'] = maintanance_jobs_df_['man_hours'].astype(str)
+  maintanance_jobs_df_['man_hours'] = (maintanance_jobs_df_['man_hours'].str.split()).apply(lambda x: float(x[0].replace(',', '')))
+  maintanance_jobs_df_.to_csv('temp_files/maintanance_jobs_df.csv', decimal=",", index = False)
+  hours_df.to_csv("temp_files/hours_df.csv")
   ## а что если проверить
       
 
