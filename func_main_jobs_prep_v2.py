@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import timedelta
 import functions
+import initial_values
 # первое - создаем датафрейм в котором строки- это минуты срока эксплуатации машины. 
 # заполняем единичками поля статуа счетчика моточасов. то есть по умолчанию счетчик работает в каждую минуту
 
@@ -11,7 +12,7 @@ import functions
 def hours_df_prep(eo, operation_start_datetime, operation_finish_datetime):
   hour_df_data = []
   current_hours_datetime = operation_start_datetime
-  while current_hours_datetime < operation_finish_datetime:
+  while current_hours_datetime < operation_finish_datetime + timedelta(hours=150000):
     temp_dict = {}
     temp_dict['eo'] = eo
     current_hours_datetime = current_hours_datetime + timedelta(hours=1)
@@ -52,7 +53,7 @@ def list_of_maintanance_forms_sorted(list_of_eos):
   # eo_job_catologue_df["operation_finish_date"] = pd.to_datetime(eo_job_catologue_df["operation_finish_date"])
   
   eo_maint_plan = pd.merge(eo_job_catologue_df, full_eo_list_selected, on='eo_code', how='left')
-  eo_maint_plan.to_csv("data/eo_maint_plan_by_eo_delete.csv")
+  # eo_maint_plan.to_csv("data/eo_maint_plan_by_eo_delete.csv")
   eo_list = list(set(eo_maint_plan['eo_code']))
   
   result_list_df = []
@@ -112,6 +113,8 @@ def list_of_maintanance_forms_sorted(list_of_eos):
         temp_dict['maintanance_category_id'] = maintanance_category_id
         temp_dict['maintanance_name'] = maintanance_name
         temp_dict['maint_interval'] = float(tr_service_interval)
+        temp_dict['tr_service_interval'] = float(tr_service_interval)
+        
         temp_dict['downtime'] = plan_downtime
         temp_dict['man_hours'] = man_hours
         result_list_df.append(temp_dict)
@@ -147,16 +150,17 @@ def maint_records_generator():
   full_eo_list = functions.full_eo_list_func()
   full_eo_list_selected = full_eo_list.loc[:, ['eo_code','strategy_id', 'avearage_day_operation_hours', 'operation_start_date', 'operation_finish_date']]
   
-  # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["sl_730_3"])]
+  # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["sl_730_3", "sl_730_61", "sl_730_62"])]
+  full_eo_list_selected.to_csv('temp_files/full_eo_list_selected.csv')
   full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([6])]
-  eo_list = list(set(full_eo_list_selected['eo_code']))
+  
   # print(eo_list_sl)
   
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["sl_730_1", "sl_730_2", "sl_730_3"])]
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([6])]
   # print(full_eo_list_selected)
   ## eo_list = list(set(full_eo_list_selected['eo_code']))
-  
+  eo_list = list(set(full_eo_list_selected['eo_code']))
   # maint_sorted_df = pd.read_csv('data/maint_forms_sorted_df.csv')
   maint_sorted_df = list_of_maintanance_forms_sorted(eo_list)
   # print(maint_sorted_df)
@@ -171,7 +175,7 @@ def maint_records_generator():
     i = i+1
     maintanance_jobs_df_list = []
     eo_code = getattr(row, "eo_code")
-    maint_sorted_df = maint_sorted_df.loc[maint_sorted_df['eo_code'].isin([eo_code])]
+    
     print("формирование maintanance_jobs_df. Машина ", i, " из", eo_len,". ео:", eo_code)
     
     operation_start_date = getattr(row, "operation_start_date")
@@ -201,7 +205,10 @@ def maint_records_generator():
     ###########################################################################################
     ################# СОЗДАЕМ ЗАПИСИ О ЕТО В maintanance_jobs_df
     ##############################################################################################
-    maintanance_start_datetime_eto_list = list(hours_df_eto_selection['eo_motohour_hour'])
+    eto_motohours_df = hours_df_eto_selection.loc[hours_df_eto_selection['eo_motohour_hour']<operation_finish_date]
+
+
+    maintanance_start_datetime_eto_list = list(eto_motohours_df['eo_motohour_hour'])
     maintanance_jobs_df_eto = pd.DataFrame(maintanance_start_datetime_eto_list, columns = ['maintanance_start_datetime'])
     
     maintanance_jobs_df_eto['maintanance_finish_datetime'] = maintanance_jobs_df_eto['maintanance_start_datetime'] + timedelta(hours = eo_downtime)
@@ -215,11 +222,13 @@ def maint_records_generator():
 
     # добавляем данные по eto в общую таблицу 
     maintanance_jobs_df_total_data = pd.concat([maintanance_jobs_df_total_data, maintanance_jobs_df_eto])
-    # print(maintanance_jobs_df_eto)
+
     print("Данные eto для ео ", eo_code, 'добавлены в модель')
     ####################################################################################################
     ####################################################################################################
-    for row in maint_sorted_df.itertuples():
+    maint_sorted_df_selected_by_eo = maint_sorted_df.loc[maint_sorted_df['eo_code'].isin([eo_code])]
+    for row in maint_sorted_df_selected_by_eo.itertuples():
+      # print("eo_code в цикле по работам", eo_code)
       maintanance_job_code = getattr(row, "maintanance_job_code")
       maintanance_name = getattr(row, "maintanance_name")
       eo_code = getattr(row, "eo_code")
@@ -231,57 +240,84 @@ def maint_records_generator():
       hours_df['cumsum'] = hours_df['motohour_hour_status'].cumsum()
       # print(hours_df.info())
       # строка, в которой значение счетчика  моточасов равно текущему значению наработки
-      # print(hours_df)
-      try:
-        hours_df_selected = hours_df.loc[hours_df['cumsum']==maint_interval, ['eo_motohour_hour', 'cumsum']]
+   
+      
+      hours_df_selected = hours_df.loc[hours_df['cumsum']==maint_interval, ['eo_motohour_hour', 'cumsum']]
+      hours_df_selected = hours_df_selected.iloc[:1]
+      # print("maintanance_name: ", maintanance_name, "hours_df_selected: ", hours_df_selected)
+      
+      maintanance_start_datetime = hours_df_selected.iloc[0]['eo_motohour_hour']
+      motohours_value = hours_df_selected.iloc[0]['cumsum']
+      
+      # interval_motohours	interval_type	maint_interval	downtime_plan	man_hours
+      ################ НАБИВАЕМ maintanance_jobs_df ДАННЫМИ ###################################
+      
+      maintanance_jobs_df_temp_dict = {}
+      maintanance_jobs_df_temp_dict['maintanance_job_code'] = maintanance_job_code
+      maintanance_jobs_df_temp_dict['eo_code'] = eo_code
+      maintanance_jobs_df_temp_dict['maintanance_category_id'] = maintanance_category_id
+      maintanance_jobs_df_temp_dict['maintanance_name'] = maintanance_name
+      maintanance_jobs_df_temp_dict['interval_motohours'] = maint_interval
+      maintanance_jobs_df_temp_dict['maintanance_start_datetime'] = maintanance_start_datetime
+      
+      # maintanance_start_datetime = operation_start_date + timedelta(hours = calendar_interval_hours)
+      maintanance_finish_datetime = maintanance_start_datetime + timedelta(hours = downtime)
+      maintanance_jobs_df_temp_dict['maintanance_finish_datetime'] = maintanance_finish_datetime
+      maintanance_jobs_df_temp_dict['downtime'] = float(downtime)
+      maintanance_jobs_df_temp_dict['man_hours'] = float(man_hours)
+      maintanance_jobs_df_temp_dict['motohours_value'] = motohours_value
 
-        maintanance_start_datetime = hours_df_selected.iloc[0]['eo_motohour_hour']
-        motohours_value = hours_df_selected.iloc[0]['cumsum']
-        
-        # interval_motohours	interval_type	maint_interval	downtime_plan	man_hours
-        ################ НАБИВАЕМ maintanance_jobs_df ДАННЫМИ ###################################
-        
-        maintanance_jobs_df_temp_dict = {}
-        maintanance_jobs_df_temp_dict['maintanance_job_code'] = maintanance_job_code
-        maintanance_jobs_df_temp_dict['eo_code'] = eo_code
-        maintanance_jobs_df_temp_dict['maintanance_category_id'] = maintanance_category_id
-        maintanance_jobs_df_temp_dict['maintanance_name'] = maintanance_name
-        maintanance_jobs_df_temp_dict['interval_motohours'] = maint_interval
-        maintanance_jobs_df_temp_dict['maintanance_start_datetime'] = maintanance_start_datetime
-        
-        # maintanance_start_datetime = operation_start_date + timedelta(hours = calendar_interval_hours)
-        maintanance_finish_datetime = maintanance_start_datetime + timedelta(hours = downtime)
-        maintanance_jobs_df_temp_dict['maintanance_finish_datetime'] = maintanance_finish_datetime
-        maintanance_jobs_df_temp_dict['downtime'] = float(downtime)
-        maintanance_jobs_df_temp_dict['man_hours'] = float(man_hours)
-        maintanance_jobs_df_temp_dict['motohours_value'] = motohours_value
-
+      if maintanance_start_datetime < operation_finish_date:
         maintanance_jobs_df_list.append(maintanance_jobs_df_temp_dict)
-        # print(eo_code)
-        # print(maintanance_jobs_df_list)
 
         # получаем диапазон в таблице часов
         model_hours_df_cut_by_maint_job = hours_df.loc[
             (hours_df['eo_motohour_hour'] > maintanance_start_datetime) &
             (hours_df['eo_motohour_hour'] <= maintanance_finish_datetime)]
         indexes_maint_job = model_hours_df_cut_by_maint_job.index.values
-       
-        
+     
+      
         # записываем ноль в поле motohour_hour_status - значит в этом интервале счетчик моточасов не работает
         hours_df.loc[indexes_maint_job, ['motohour_hour_status']] = 0
         hours_df.loc[indexes_maint_job, ['downtime_status']] = 1
-      except Exception as e:
-        pass
-        # print(e, "исключение при вырезании куска из hours_df")
+        # режем hours_df
+        # hours_df = hours_df.loc[hours_df['eo_motohour_hour'] < operation_finish_date]
+    hours_df = hours_df.loc[hours_df['eo_motohour_hour'] < operation_finish_date]
     month_year_groupped_df = hours_df.groupby(['eo', 'year', 'month'], as_index = False)[['calendar_fond', 'downtime_status']].sum()
+    year_counter_df_list = []
+    current_datetime = operation_start_date
+    while current_datetime < operation_finish_date:
+      current_datetime = current_datetime + timedelta(days = 365)
+      try:
+        temp_dict = {}
+        hours_df_selected = hours_df.loc[hours_df['eo_motohour_hour']==current_datetime]
+        counter_value = hours_df_selected.iloc[0]['cumsum']
+        temp_dict['eo_code'] = eo_code
+        temp_dict['datetime'] = current_datetime
+        temp_dict['counter_value'] = counter_value
+        year_counter_df_list.append(temp_dict)
+
+          
+      except:
+        pass
+    
+    
     ktg_data_df = pd.concat([ktg_data_df, month_year_groupped_df])
 
     maintanance_jobs_df = pd.DataFrame(maintanance_jobs_df_list)
+    # режем maintanance_jobs_df
+    maintanance_jobs_df = maintanance_jobs_df.loc[maintanance_jobs_df['maintanance_start_datetime'] < operation_finish_date]
     # добавляем данные по eto в общую таблицу 
     maintanance_jobs_df_total_data = pd.concat([maintanance_jobs_df_total_data, maintanance_jobs_df])
     maintanance_jobs_df = pd.DataFrame()
+    # name_file = 'temp_files/hours_df' + eo_code + ".csv"
+    # hours_df.to_csv(name_file)
   
     print("Данные для ео ", eo_code, 'добавлены в модель')
+  
+  counter_year_df = pd.DataFrame(year_counter_df_list)
+  counter_year_df['year'] = counter_year_df['datetime'].dt.year
+  counter_year_df.to_csv('output_data/counter_year.csv', index = False)
   
   ktg_data_df.to_csv('temp_files/ktg_data_df.csv', index = False)
   
@@ -294,12 +330,46 @@ def maint_records_generator():
   maintanance_jobs_df_.sort_values(['maintanance_start_datetime'], inplace=True)
   maintanance_jobs_df_['man_hours'] = maintanance_jobs_df_['man_hours'].astype(str)
   maintanance_jobs_df_['man_hours'] = (maintanance_jobs_df_['man_hours'].str.split()).apply(lambda x: float(x[0].replace(',', '')))
+  maintanance_jobs_df_['year'] = maintanance_jobs_df_['maintanance_start_datetime'].dt.year
+  maintanance_jobs_df_['month'] = maintanance_jobs_df_['maintanance_start_datetime'].dt.month
+  
   maintanance_jobs_df_.to_csv('temp_files/maintanance_jobs_df.csv', decimal=",", index = False)
-  hours_df.to_csv("temp_files/hours_df.csv")
-  ## а что если проверить
-      
+
+
+  # maintanance_jobs_df_.to_csv('output_data/maintanance_jobs_df.csv', decimal=",", index = False)
+   
+ 
+  
 
 
     
 # list_of_maintanance_forms_sorted()
 maint_records_generator()
+maintanance_jobs_df = pd.read_csv('temp_files/maintanance_jobs_df.csv', decimal=",")
+maintanance_jobs_df_short = maintanance_jobs_df.loc[:, ['eo_code', 'maintanance_category_id', 'maintanance_name', 'interval_motohours','maintanance_start_datetime','maintanance_finish_datetime','downtime','man_hours','motohours_value', 'year', 'month']]
+
+maintanance_jobs_df_short.to_csv('output_data/maintanance_jobs_df_short.csv', decimal=",", index = False)
+# список машин
+eo_list = list(set(maintanance_jobs_df_short['eo_code']))
+# print(eo_list)
+year_list = list(set(maintanance_jobs_df_short['year']))
+year_list = sorted(year_list)
+# print(year_list)
+month_list = list(set(maintanance_jobs_df_short['month']))
+month_list = sorted(month_list)
+result_list = []
+for year_el in year_list:
+  for month_el in month_list:
+    temp_dict  = {}
+    temp_df = maintanance_jobs_df_short.loc[maintanance_jobs_df_short['year']==year_el]
+    temp_df = temp_df.loc[temp_df['month']==month_el]
+    number_of_eo= len(list(set(temp_df['eo_code'])))
+    temp_dict['year'] = year_el
+    temp_dict['month'] = month_el
+    temp_dict['number_of_eo'] = number_of_eo
+    # print(number_of_eo, month_el)
+    result_list.append(temp_dict)
+number_of_eo_df = pd.DataFrame(result_list)
+number_of_eo_df.to_csv('output_data/number_of_eo.csv', index = False)
+
+
