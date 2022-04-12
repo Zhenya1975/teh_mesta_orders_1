@@ -165,7 +165,7 @@ def maint_records_generator():
         # режем hours_df
         # hours_df = hours_df.loc[hours_df['eo_motohour_hour'] < operation_finish_date]
     hours_df = hours_df.loc[hours_df['eo_motohour_hour'] < operation_finish_date]
-    hours_df.to_csv('temp_files/hours_df_with_all_data.csv', index = False)
+    # hours_df.to_csv('temp_files/hours_df_with_all_data.csv', index = False)
     month_year_groupped_df = hours_df.groupby(['eo', 'year', 'month'], as_index = False)[['calendar_fond', 'downtime_status']].sum()
 
     ################## подготовка таблицы со значением наработки после года эксплуатации
@@ -193,8 +193,8 @@ def maint_records_generator():
     # добавляем данные по eto в общую таблицу 
     maintanance_jobs_df_total_data = pd.concat([maintanance_jobs_df_total_data, maintanance_jobs_df])
     maintanance_jobs_df = pd.DataFrame()
-    # name_file = 'temp_files/hours_df' + eo_code + ".csv"
-    # hours_df.to_csv(name_file)
+    name_file = 'temp_files/hours_df' + eo_code + ".csv"
+    hours_df.to_csv(name_file)
   
     print("Данные для ео ", eo_code, 'добавлены в модель')
   
@@ -202,17 +202,16 @@ def maint_records_generator():
   counter_year_df['year'] = counter_year_df['datetime'].dt.year
   counter_year_df.to_csv('output_data/counter_year.csv', index = False)
   
-  ktg_data_df.to_csv('temp_files/ktg_data_df.csv', index = False)
+  ktg_data_df.to_csv('output_data/ktg_data_df.csv', index = False, decimal = ",")
   
 
   full_eo_list_for_merge = full_eo_list.loc[:,['eo_code', 'level_1_description', 'eo_class_description','eo_model_name', 'eo_description']]
-  # print(full_eo_list_for_merge.info())
-  # print("maintanance_jobs_df", maintanance_jobs_df.info())
+
 
   
   maintanance_jobs_df_total_data['year_of_operation'] = maintanance_jobs_df_total_data['day_of_opearation']/365
   maintanance_jobs_df_total_data['year_of_operation'] = maintanance_jobs_df_total_data['year_of_operation'].apply(np.floor)+1
-      # maintanance_jobs_df_temp_dict['year_of_opearation'] = round(maintanance_jobs_df_temp_dict['year_of_opearation'], 0)+1
+
   
   
   maintanance_jobs_df_ = pd.merge(maintanance_jobs_df_total_data, full_eo_list_for_merge, on = 'eo_code', how='left')
@@ -235,7 +234,7 @@ def maint_records_generator():
 # list_of_maintanance_forms_sorted()
 maint_records_generator()
 maintanance_jobs_df = pd.read_csv('temp_files/maintanance_jobs_df.csv', decimal=",")
-maintanance_jobs_df_short = maintanance_jobs_df.loc[:, ['eo_code', 'maintanance_category_id', 'maintanance_name', 'interval_motohours','maintanance_start_datetime','maintanance_finish_datetime','downtime','man_hours','motohours_value', 'year', 'month']]
+maintanance_jobs_df_short = maintanance_jobs_df.loc[:, ['eo_code', 'maintanance_category_id', 'maintanance_name', 'interval_motohours','maintanance_start_datetime','maintanance_finish_datetime','downtime','man_hours','motohours_value', 'year', 'month', 'year_of_operation']]
 
 maintanance_jobs_df_short.to_csv('output_data/maintanance_jobs_df_short.csv', decimal=",", index = False)
 # список машин
