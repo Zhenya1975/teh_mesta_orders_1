@@ -15,6 +15,8 @@ def upload_file(file_path, file_name):
 
   
 # upload_file('temp_files/df.csv', 'full_eo_list_actual.csv')
+# upload_file('output_data/ktg_data_df.csv', 'ktg_data_df.csv')
+
 # Получает общую информацию о диске
 # print(y.get_disk_info())
 # print(list(y.listdir("/")))

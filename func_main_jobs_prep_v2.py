@@ -23,6 +23,7 @@ def hours_df_prep(eo, operation_start_datetime, operation_finish_datetime):
     temp_dict['year'] = current_hours_datetime.year
     temp_dict['month'] = current_hours_datetime.month
     temp_dict['hour'] = current_hours_datetime.hour
+    temp_dict['maint_job'] = []
     hour_df_data.append(temp_dict)
 
   motohours_hour_df = pd.DataFrame(hour_df_data)
@@ -121,15 +122,19 @@ def list_of_maintanance_forms_sorted(list_of_eos):
 
       # 3. если попалась строка без поглащений
       elif tr_category !='tr' and maintanance_category_id != 'eto' and go_interval =='not':
-        temp_dict = {}
-        temp_dict['maintanance_job_code'] = maintanance_job_code
-        temp_dict['eo_code'] = eo_code
-        temp_dict['maintanance_category_id'] = maintanance_category_id
-        temp_dict['maintanance_name'] = maintanance_name
-        temp_dict['maint_interval'] = float(interval_motohours)
-        temp_dict['downtime'] = plan_downtime
-        temp_dict['man_hours'] = man_hours
-        result_list_df.append(temp_dict)
+
+        mth_counter = 0
+        while mth_counter < 150000:
+          mth_counter = mth_counter + float(interval_motohours)
+          temp_dict = {}
+          temp_dict['maintanance_job_code'] = maintanance_job_code
+          temp_dict['eo_code'] = eo_code
+          temp_dict['maintanance_category_id'] = maintanance_category_id
+          temp_dict['maintanance_name'] = maintanance_name
+          temp_dict['maint_interval'] = mth_counter
+          temp_dict['downtime'] = plan_downtime
+          temp_dict['man_hours'] = man_hours
+          result_list_df.append(temp_dict)
       
       
     maint_sorted_df = pd.DataFrame(result_list_df)
