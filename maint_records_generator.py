@@ -326,12 +326,17 @@ def maintanance_jobs_df_short_prepare():
   print("output_data/maintanance_jobs_df_short.csv записан")
 
   groupped_maintanance_jobs_df = maintanance_jobs_df_short.groupby(['level_1_description','eo_class_description', 'eo_model_name','year', 'month', 'eo_code'], as_index = False)[['count']].max()
-  groupped_maintanance_jobs_2_df = groupped_maintanance_jobs_df.groupby(['year', 'month','level_1_description','eo_class_description', 'eo_model_name'], as_index = False)[['count']].sum()
+  number_of_eo_month_year = groupped_maintanance_jobs_df.groupby(['year', 'month','level_1_description','eo_class_description', 'eo_model_name'], as_index = False)[['count']].sum()
+  number_of_eo_month_year['month_year'] = number_of_eo_month_year['month'].astype('str') + "_" + number_of_eo_month_year['year'].astype('str')
+
   
-
-   
-  groupped_maintanance_jobs_2_df.to_csv('output_data/number_of_eo.csv', index = False)
-
+  number_of_eo_year = number_of_eo_month_year.loc[number_of_eo_month_year['month']==12]
+  print(number_of_eo_year)
+  number_of_eo_year = number_of_eo_year.loc[:, ['year', 'level_1_description', 'eo_class_description', 'eo_model_name', 'count']]
+		
+  
+  number_of_eo_month_year.to_csv('output_data/number_of_eo_month_year.csv', index = False)
+  number_of_eo_year.to_csv('output_data/number_of_eo_year.csv', index = False)
 
 # func_eo_job_catalague_prep.eo_job_catologue()
 # maint_records_generator()
