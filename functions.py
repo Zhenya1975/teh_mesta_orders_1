@@ -94,7 +94,19 @@ def maintanance_job_list_general_func():
 
 def eo_job_catologue_df_func():
     """чтение eo_job_catologue_df"""
-    eo_job_catologue_df = pd.read_csv('data/eo_job_catologue.csv', dtype=str)
+    try:
+      yad_file_name = "eo_job_catologue.csv"
+      yad.get_file(yad_file_name)
+      eo_job_catologue_yad = pd.read_csv("temp_files/df.csv", decimal = ",", dtype=str)
+      print("eo_job_catologue получен и записан в df")
+      # удаляем файл из временной папки
+      yad.delete_file("temp_files/df.csv")
+      print("eo_job_catologue удален из временной папки")
+    except Exception as e:
+      print('не удалось скачать файл eo_job_catologue.csv')
+
+    # eo_job_catologue_df = pd.read_csv('data/eo_job_catologue.csv', dtype=str)
+    eo_job_catologue_df = eo_job_catologue_yad
     eo_job_catologue_df["downtime_planned"] = eo_job_catologue_df["downtime_planned"].astype('float')
     # eo_job_catologue_df["operation_start_date"] = pd.to_datetime(eo_job_catologue_df["operation_start_date"])
     # eo_job_catologue_df["operation_finish_date"] = pd.to_datetime(eo_job_catologue_df["operation_finish_date"])

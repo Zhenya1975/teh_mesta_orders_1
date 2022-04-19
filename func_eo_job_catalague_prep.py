@@ -1,5 +1,7 @@
 import pandas as pd
 import functions
+import yad
+
 def eo_job_catologue():
   '''создание файла eo_job_catologue: список оборудование - работа на оборудовании'''
   # Джойним список машин из full_eo_list c планом ТО из maintanance_job_list_general
@@ -117,12 +119,11 @@ def eo_job_catologue():
   tr_data_df = pd.DataFrame(result_list)
   # собираем две таблицы 
   tr_data_complete = pd.concat([eo_maintanance_plan_df_no_tr, tr_data_df])
-  tr_data_complete.to_csv('data/eo_job_catologue.csv')
-
-  
-  # return tr_data_df
-  # eo_maintanance_plan_df_tr.to_csv('data/eo_maintanance_plan_df_delete.csv')
-  print("отработал func_eo_job_catalague_prep.py")
+  tr_data_complete.to_csv('temp_files/eo_job_catologue.csv')
+  yad.upload_file('temp_files/eo_job_catologue.csv', 'eo_job_catologue.csv')
+  print("eo_job_catologue.csv загружен в yad")
+  yad.delete_file('temp_files/eo_job_catologue.csv')
+  print("удален temp_files/eo_job_catologue.csv")
 
 
 # eo_job_catologue()

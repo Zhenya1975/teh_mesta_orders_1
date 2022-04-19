@@ -32,17 +32,18 @@ def hours_df_prep(eo, operation_start_datetime, operation_finish_datetime):
 
 
 
-def eo_job_catologue_df_func():
-  """чтение eo_job_catologue_df"""
-  eo_job_catologue_df = pd.read_csv('data/eo_job_catologue.csv', dtype=str)
-  eo_job_catologue_df["downtime_planned"] = eo_job_catologue_df["downtime_planned"].astype('float')
+# def eo_job_catologue_df_func():
+#   """чтение eo_job_catologue_df"""
+#   eo_job_catologue_df = pd.read_csv('data/eo_job_catologue.csv', dtype=str)
+#   eo_job_catologue_df["downtime_planned"] = eo_job_catologue_df["downtime_planned"].astype('float')
   
-  return eo_job_catologue_df
+#   return eo_job_catologue_df
 
 
 def list_of_maintanance_forms_sorted(list_of_eos):
   
-  eo_job_catologue_df = eo_job_catologue_df_func()
+  # eo_job_catologue_df = eo_job_catologue_df_func()
+  eo_job_catologue_df = functions.eo_job_catologue_df_func()
   eo_job_catologue_df = eo_job_catologue_df.loc[eo_job_catologue_df['eo_code'].isin(list_of_eos)]
   # создаем список форм ТОиР. eo, номинальная наработка с начала эксплуатации, простой, тип ТОИР
   # итерируемся по строкам файла eo_job_catologue_df

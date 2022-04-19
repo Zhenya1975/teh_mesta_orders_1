@@ -4,6 +4,7 @@ import func_main_jobs_prep_v2
 from datetime import timedelta
 import numpy as np
 import yad
+import func_eo_job_catalague_prep
 
 def maint_records_generator():
   # открываем почасовую таблицу и итерируясь по списку форм заполняем нулями строки где есть работы  
@@ -294,13 +295,16 @@ def maintanance_jobs_df_download():
     print("maintanance_jobs удален из временной папки")
     return maintanance_jobs_df_yad
   except Exception as e:
-    print('')
+    print('не удалось скачать файл maintanance_jobs_df.csv')
 
 
 def maintanance_jobs_df_short_prepare():    
   # maintanance_jobs_df = pd.read_csv('temp_files/maintanance_jobs_df.csv', decimal=",")
   maintanance_jobs_df = maintanance_jobs_df_download()
-  maintanance_jobs_df_short = maintanance_jobs_df.loc[:, ['eo_code', 'maintanance_category_id', 'maintanance_name', 'interval_motohours','maintanance_start_datetime','maintanance_finish_datetime','downtime','man_hours','motohours_value', 'year', 'month', 'year_of_operation']]
+  # print(maintanance_jobs_df.info())
+  
+  maintanance_jobs_df_short = maintanance_jobs_df.loc[:, ['level_1_description','eo_class_description', 'eo_model_name','eo_description', 'eo_code', 'maintanance_category_id', 'maintanance_name', 'interval_motohours','maintanance_start_datetime','maintanance_finish_datetime','downtime','man_hours','motohours_value', 'year', 'month', 'year_of_operation']]
+  maintanance_jobs_df_short['count'] = 1
   # нужно убрать значения с точкой в полях с датой
   
   
@@ -317,33 +321,19 @@ def maintanance_jobs_df_short_prepare():
   # print(maintanance_jobs_df_short)
   # maintanance_jobs_df_short['downtime', 'man_hours'] = maintanance_jobs_df_short['downtime', 'man_hours'].astype(str)
   # maintanance_jobs_df_short['downtime'] = (maintanance_jobs_df_short['downtime'].str.split()).apply(lambda x: (x[0].replace('.', ',')))
-  print(maintanance_jobs_df_short.info())                                                                      
+  # print(maintanance_jobs_df_short.info())                                                                      
   maintanance_jobs_df_short.to_csv('output_data/maintanance_jobs_df_short.csv', decimal=",")
   print("output_data/maintanance_jobs_df_short.csv записан")
-  eo_list = list(set(maintanance_jobs_df_short['eo_code']))
-  # print(eo_list)
-  year_list = list(set(maintanance_jobs_df_short['year']))
-  year_list = sorted(year_list)
-  # print(year_list)
-  month_list = list(set(maintanance_jobs_df_short['month']))
-  month_list = sorted(month_list)
-  result_list = []
-  for year_el in year_list:
-    for month_el in month_list:
-      temp_dict  = {}
-      temp_df = maintanance_jobs_df_short.loc[maintanance_jobs_df_short['year']==year_el]
-      temp_df = temp_df.loc[temp_df['month']==month_el]
-      number_of_eo= len(list(set(temp_df['eo_code'])))
-      temp_dict['year'] = year_el
-      temp_dict['month'] = month_el
-      temp_dict['number_of_eo'] = number_of_eo
-      # print(number_of_eo, month_el)
-      result_list.append(temp_dict)
-  number_of_eo_df = pd.DataFrame(result_list)
-  number_of_eo_df.to_csv('output_data/number_of_eo.csv', index = False)
+
+  groupped_maintanance_jobs_df = maintanance_jobs_df_short.groupby(['level_1_description','eo_class_description', 'eo_model_name','year', 'month', 'eo_code'], as_index = False)[['count']].max()
+  groupped_maintanance_jobs_2_df = groupped_maintanance_jobs_df.groupby(['year', 'month','level_1_description','eo_class_description', 'eo_model_name'], as_index = False)[['count']].sum()
+  
+
+   
+  groupped_maintanance_jobs_2_df.to_csv('output_data/number_of_eo.csv', index = False)
 
 
-
+# func_eo_job_catalague_prep.eo_job_catologue()
 # maint_records_generator()
 # update_ktg_data_df() 
 # update_maintanance_jobs_df()

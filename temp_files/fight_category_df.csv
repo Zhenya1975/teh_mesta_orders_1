@@ -1,0 +1,13 @@
+,comp_id,wc_id,round_place_no,round_fighter_place_identifier,fighter_occupation_status,fighter_id
+0,1,14,1,round_place_1_comp_1_wc_14_rndid_1_red,occupied,1
+1,1,14,2,round_place_2_comp_1_wc_14_rndid_1_blue,occupied,2
+2,1,14,3,round_place_3_comp_1_wc_14_rndid_1_red,occupied,3
+3,1,14,4,round_place_4_comp_1_wc_14_rndid_1_blue,occupied,4
+4,1,14,5,round_place_5_comp_1_wc_14_rndid_1_red,occupied,5
+5,1,14,6,round_place_6_comp_1_wc_14_rndid_1_blue,occupied,6
+6,1,14,7,round_place_7_comp_1_wc_14_rndid_1_red,occupied,7
+7,1,14,8,round_place_8_comp_1_wc_14_rndid_1_blue,occupied,8
+8,1,14,1,round_place_1_comp_1_wc_14_rndid_2_red,occupied,9
+9,1,14,2,round_place_2_comp_1_wc_14_rndid_2_blue,free,0
+10,1,14,3,round_place_3_comp_1_wc_14_rndid_2_red,free,0
+11,1,14,4,round_place_4_comp_1_wc_14_rndid_2_blue,free,0
