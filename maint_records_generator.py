@@ -21,7 +21,7 @@ def maint_records_generator():
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["sl_730_3", "sl_730_61", "sl_730_62"])]
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["100000065629"])]
   # full_eo_list_selected.to_csv('temp_files/full_eo_list_selected.csv')
-  full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([2])]
+  full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([4])]
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([2,4,5,6])]
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["sl_730_1", "sl_730_2", "sl_730_10"])]
 
@@ -373,8 +373,8 @@ def zip():
     yad.delete_file(file)
   
 # func_eo_job_catalague_prep.eo_job_catologue()
-# maint_records_generator()
-# update_ktg_data_df() 
-# update_maintanance_jobs_df()
-# maintanance_jobs_df_short_prepare()
+maint_records_generator()
+update_ktg_data_df() 
+update_maintanance_jobs_df()
+maintanance_jobs_df_short_prepare()
 number_of_eo_by_years()

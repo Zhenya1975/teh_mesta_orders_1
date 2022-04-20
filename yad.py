@@ -1,6 +1,8 @@
 import yadisk
 import os
 import pandas as pd
+import zipfile
+
 y = yadisk.YaDisk(token="AQAAAABfSJVEAAfMGMams7U1xkJGgxmm7sinToc")
 
 try:
@@ -11,10 +13,13 @@ except:
 
 
 def upload_file(file_path, file_name):
-  y.upload(file_path, file_name, overwrite = True)
+  try:
+    y.upload(file_path, file_name, overwrite = True)
+    print("Файл ", file_name, " успешно выгружен")
+  except Exception as e:
+    print('не получилось загрузить файл ', file_name, " Ошибка: ", e)
 
 
-  
 # upload_file('temp_files/df.csv', 'full_eo_list_actual.csv')
 # upload_file('output_data/ktg_data_df.csv', 'ktg_data_df.csv')
 
@@ -42,6 +47,7 @@ def get_file(file_name):
 def delete_file(file_path):
   try:
     os.remove(file_path)
+    print("Файл ", file_path, " удален")
   except Exception as e:
     print("Не удалось удалить файл", e)
 # get_file("/eo_job_catologue.csv")
@@ -72,3 +78,36 @@ def maintanance_jobs_df_download():
     return maintanance_jobs_df_yad
   except Exception as e:
     print('не удалось скачать файл maintanance_jobs_df.csv')
+
+
+# теперь в яд мы будем отправлять не файлы, а архив
+# делаем первичную загрузку архива
+# получаем с яд maintanance_jobs_df
+# get_file("full_eo_list_actual.csv")
+
+
+# upload_file("output_data/maintanance_jobs_df.zip", "maintanance_jobs_df.zip")
+
+# file_names_list = ["eo_job_catologue", "full_eo_list_actual", "ktg_data_df", "maintanance_jobs_df", "number_of_eo_month_year",  "number_of_eo_year"]
+# for file_name in file_names_list:
+#   archive = "output_data/" + file_name + ".zip"
+#   file_name_ = file_name + ".zip"
+#   upload_file(archive, file_name_)
+#   print(file_name, " выгружен")
+
+# for file_name in file_names_list:
+#   file_path = "output_data/" + file_name  + ".csv"
+  
+#   files_to_zip = [file_path]
+#   archive = "output_data/" + file_name + ".zip"
+#   with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+#     for file in files_to_zip:
+#       zf.write(file)
+def unzip():
+  with zipfile.ZipFile('output_data/maintanance_jobs_df.zip', 'r') as zipObj:
+     # Extract all the contents of zip file in current directory
+     zipObj.extractall()
+  
+  upload_file("output_data/maintanance_jobs_df.csv", "maintanance_jobs_df.csv")
+  delete_file("output_data/maintanance_jobs_df.csv")
+  
