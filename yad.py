@@ -1,5 +1,6 @@
 import yadisk
 import os
+import pandas as pd
 y = yadisk.YaDisk(token="AQAAAABfSJVEAAfMGMams7U1xkJGgxmm7sinToc")
 
 try:
@@ -34,6 +35,7 @@ def get_file(file_name):
 
 # get_file("maintanance_jobs_short.csv")
 # get_file("full_eo_list_actual.csv")
+# get_file("ktg_data_df.csv")
 
 
 
@@ -42,7 +44,7 @@ def delete_file(file_path):
     os.remove(file_path)
   except Exception as e:
     print("Не удалось удалить файл", e)
-# get_file("maintanance_jo_df.csv")
+# get_file("/eo_job_catologue.csv")
 # upload_file('data/job_list.csv', 'job_list.csv')
 
 # upload_file('temp_files/maintanance_jobs_df.csv', 'maintanance_jobs_df.csv')
@@ -57,3 +59,16 @@ def delete_file(file_path):
 # full_eo_list_actual.csv
 # maintanance_jobs_df.csv
 # maintanance_jobs_short.csv
+
+def maintanance_jobs_df_download():
+  try:
+    yad_file_name = "maintanance_jobs_df.csv"
+    get_file(yad_file_name)
+    maintanance_jobs_df_yad = pd.read_csv("temp_files/df.csv", decimal = ",", low_memory=False)
+    print("maintanance_jobs_df получен и записан в df")
+    # удаляем файл из временной папки
+    delete_file("temp_files/df.csv")
+    print("maintanance_jobs удален из временной папки")
+    return maintanance_jobs_df_yad
+  except Exception as e:
+    print('не удалось скачать файл maintanance_jobs_df.csv')

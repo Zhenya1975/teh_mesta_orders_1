@@ -140,6 +140,7 @@ def list_of_maintanance_forms_sorted(list_of_eos):
       
     maint_sorted_df = pd.DataFrame(result_list_df)
     maint_sorted_df.sort_values(['maint_interval', 'downtime'], inplace = True)
+    maint_sorted_df = maint_sorted_df.loc[maint_sorted_df['maint_interval'] < 150000]
     maint_sorted_df.to_csv('data/maint_forms_sorted_df.csv', index = False)
     # print("Завершено формирование таблицы data/maint_forms_sorted_df.csv")
   return maint_sorted_df
