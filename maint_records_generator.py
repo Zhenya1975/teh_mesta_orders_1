@@ -9,6 +9,13 @@ import func_eo_job_catalague_prep
 import shutil
 import zipfile
 
+# 100000062379 785C Олимпиадинский ГОК
+# 100000008673 785C Полюс Вернинское
+# 100000065514 793D Олимпиадинский ГОК
+# 100000084396 730 Полюс Магадан
+# sl_730_1 Сухой лог
+# ['100000062379', '100000008673', '100000065514', '100000084396', 'sl_730_1']
+
 def maint_records_generator():
   # открываем почасовую таблицу и итерируясь по списку форм заполняем нулями строки где есть работы  
   # В maintanance_jobs_df будем создавать записи с работами
@@ -21,9 +28,9 @@ def maint_records_generator():
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["sl_730_3", "sl_730_61", "sl_730_62"])]
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["100000065629"])]
   # full_eo_list_selected.to_csv('temp_files/full_eo_list_selected.csv')
-  full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([4])]
+  # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([4])]
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([2,4,5,6])]
-  # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["sl_730_1", "sl_730_2", "sl_730_10"])]
+  full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(['100000062379', '100000008673', '100000065514', '100000084396', 'sl_730_1'])]
 
   eo_list = list(set(full_eo_list_selected['eo_code']))
   # maint_sorted_df = pd.read_csv('data/maint_forms_sorted_df.csv')
@@ -272,11 +279,11 @@ def update_maintanance_jobs_df():
     yad.get_file(yad_file_name)
     maintanance_jobs_df_yad = pd.read_csv("temp_files/df.csv", decimal = ",", low_memory=False)
     
-    print("maintanance_jobs_df_yad прочитан")
+    print("update_maintanance_jobs_df(). maintanance_jobs_df_yad прочитан")
     # удаляем файл из временной папки
     # удаляем строки с ео, которые есть в рассчитанном файле
     yad.delete_file("temp_files/df.csv")
-    print("maintanance_jobs_df_yad удален")
+
     updated_maintanance_jobs_df = pd.read_csv('temp_files/maintanance_jobs_df.csv', decimal = ",")
     eo_list = list(set(updated_maintanance_jobs_df['eo_code']))
     maintanance_jobs_df_yad = maintanance_jobs_df_yad.loc[~maintanance_jobs_df_yad['eo_code'].isin(eo_list)]
@@ -284,12 +291,12 @@ def update_maintanance_jobs_df():
     maintanance_jobs_df_yad = pd.concat([maintanance_jobs_df_yad, updated_maintanance_jobs_df])
     # сохраняем новый файл
     maintanance_jobs_df_yad.to_csv('temp_files/maintanance_jobs_df_yad.csv', index = False, decimal = ',')
-    print("maintanance_jobs_df_yad обновлен")
+    print("update_maintanance_jobs_df() maintanance_jobs_df обновлен")
     # загружаем файл в yad
     yad.upload_file('temp_files/maintanance_jobs_df_yad.csv', 'maintanance_jobs_df.csv')
-    print("maintanance_jobs_df_yad выгружен")
+    print("update_maintanance_jobs_df() maintanance_jobs_df выгружен в yad")
     yad.delete_file('temp_files/maintanance_jobs_df_yad.csv')
-    print('maintanance_jobs_df_yad удален')
+    print('update_maintanance_jobs_df() maintanance_jobs_df_yad удален из temp_files')
     
    
   except Exception as e:
@@ -297,9 +304,9 @@ def update_maintanance_jobs_df():
     
 
 def maintanance_jobs_df_short_prepare():    
-  # maintanance_jobs_df = pd.read_csv('temp_files/maintanance_jobs_df.csv', decimal=",")
-  maintanance_jobs_df = yad.maintanance_jobs_df_download()
-  print(maintanance_jobs_df.info())
+  maintanance_jobs_df = pd.read_csv('temp_files/maintanance_jobs_df.csv', decimal=",")
+  # maintanance_jobs_df = yad.maintanance_jobs_df_download()
+  # print(maintanance_jobs_df.info())
   
   maintanance_jobs_df_short = maintanance_jobs_df.loc[:, ['level_1_description','eo_class_description', 'eo_model_name','eo_description', 'eo_code', 'maintanance_category_id', 'maintanance_name', 'interval_motohours','maintanance_start_datetime','maintanance_finish_datetime','downtime','man_hours','motohours_value', 'year', 'month', 'year_of_operation']]
   maintanance_jobs_df_short['count'] = 1
@@ -328,16 +335,18 @@ def maintanance_jobs_df_short_prepare():
 
 def number_of_eo_by_years():
   try:
-    yad_file_name = "maintanance_jobs_df.csv"
-    yad.get_file(yad_file_name)
-    maintanance_jobs_df= pd.read_csv("temp_files/df.csv", decimal = ",", low_memory=False)
+    # yad_file_name = "maintanance_jobs_df.csv"
+    # yad.get_file(yad_file_name)
+    # maintanance_jobs_df= pd.read_csv("temp_files/df.csv", decimal = ",", low_memory=False)
+    maintanance_jobs_df= pd.read_csv("temp_files/maintanance_jobs_df.csv", decimal = ",", low_memory=False)
+  
     maintanance_jobs_df['count'] = 1
-    print("maintanance_jobs_df_yad прочитан")
+    # print("maintanance_jobs_df_yad прочитан")
     # удаляем файл из временной папки
-    yad.delete_file("temp_files/df.csv")
-    print("maintanance_jobs_df_yad удален")
+    # yad.delete_file("temp_files/df.csv")
+    # print("maintanance_jobs_df_yad удален")
   except Exception as e:
-    print("в def number_of_eo_by_years() не удалось загрузить maintanance_jobs_df")
+    print("в def number_of_eo_by_years() не удалось загрузить maintanance_jobs_df", e)
   
   groupped_maintanance_jobs_df = maintanance_jobs_df.groupby(['level_1_description','eo_class_description', 'eo_model_name','year', 'month', 'eo_code'], as_index = False)[['count']].max()
   groupped_maintanance_jobs_df.to_csv('temp_files/groupped_maintanance_jobs_df.csv')
@@ -349,7 +358,9 @@ def number_of_eo_by_years():
   number_of_eo_year = number_of_eo_month_year.loc[number_of_eo_month_year['month']==12]
   
   number_of_eo_year = number_of_eo_year.loc[:, ['year', 'level_1_description', 'eo_class_description', 'eo_model_name', 'count']]
-		
+  number_of_eo_year = number_of_eo_year.rename(columns=initial_values.rename_columns_dict)
+	
+  number_of_eo_month_year = number_of_eo_month_year.rename(columns=initial_values.rename_columns_dict)	
   
   number_of_eo_month_year.to_csv('output_data/number_of_eo_month_year.csv', index = False)
   print("output_data/number_of_eo_month_year.csv записан")
@@ -373,8 +384,9 @@ def zip():
     yad.delete_file(file)
   
 # func_eo_job_catalague_prep.eo_job_catologue()
-maint_records_generator()
-update_ktg_data_df() 
-update_maintanance_jobs_df()
-maintanance_jobs_df_short_prepare()
+# maint_records_generator()
+# update_ktg_data_df() 
+# update_maintanance_jobs_df()
+# yad.delete_file('temp_files/maintanance_jobs_df.csv')
+# maintanance_jobs_df_short_prepare()
 number_of_eo_by_years()
