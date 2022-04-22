@@ -17,12 +17,14 @@ def upload_file(file_path, file_name):
     y.upload(file_path, file_name, overwrite = True)
     print("Файл ", file_name, " успешно выгружен")
   except Exception as e:
-    print('не получилось загрузить файл ', file_name, " Ошибка: ", e)
+    print('не получилось upload_file ', file_name, " Ошибка: ", e)
 
 
 # upload_file('temp_files/df.csv', 'full_eo_list_actual.csv')
 # upload_file('output_data/ktg_data_df.csv', 'ktg_data_df.csv')
-
+# upload_file('output_data/sac_report_maintanance_jobs.csv', 'sac_report_maintanance_jobs.csv')
+    
+    
 # Получает общую информацию о диске
 # print(y.get_disk_info())
 # print(list(y.listdir("/")))
@@ -35,14 +37,15 @@ def upload_file(file_path, file_name):
 def get_file(file_name):
   try:
     y.download(file_name, "temp_files/df.csv")
-  except:
-    print("не получилось загрузить файл")
+  except Exception as e:
+    print("не получилось get_file", e)
 
-# get_file("maintanance_jobs_short.csv")
+# get_file("maintanance_jobs_df.csv")
 # get_file("full_eo_list_actual.csv")
 # get_file("ktg_data_df.csv")
 
-
+# df = pd.read_csv('temp_files/df.csv')
+# print(df.info())
 
 def delete_file(file_path):
   try:

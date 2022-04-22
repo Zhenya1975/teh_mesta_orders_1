@@ -6,6 +6,7 @@ from datetime import timedelta
 import numpy as np
 import yad
 import func_eo_job_catalague_prep
+import func_fleet_avg_age
 import shutil
 import zipfile
 
@@ -28,9 +29,9 @@ def maint_records_generator():
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["sl_730_3", "sl_730_61", "sl_730_62"])]
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(["100000065629"])]
   # full_eo_list_selected.to_csv('temp_files/full_eo_list_selected.csv')
-  # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([4])]
+  full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([2])]
   # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['strategy_id'].isin([2,4,5,6])]
-  full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(['100000062379', '100000008673', '100000065514', '100000084396', 'sl_730_1'])]
+  # full_eo_list_selected = full_eo_list_selected.loc[full_eo_list_selected['eo_code'].isin(['100000062379', '100000008673', '100000065514', '100000084396', 'sl_730_1'])]
 
   eo_list = list(set(full_eo_list_selected['eo_code']))
   # maint_sorted_df = pd.read_csv('data/maint_forms_sorted_df.csv')
@@ -217,11 +218,15 @@ def maint_records_generator():
   counter_year_df['year'] = counter_year_df['datetime'].dt.year
   counter_year_df.to_csv('output_data/counter_year.csv', index = False)
   
+  full_eo_list_for_merge = full_eo_list.loc[:,['eo_code', 'level_1_description', 'eo_class_description','eo_model_name', 'eo_description']]
+  ktg_data_df = pd.merge(ktg_data_df, full_eo_list_for_merge, left_on='eo', right_on='eo_code', how='left')
+  ktg_data_df = ktg_data_df.rename(columns=initial_values.rename_columns_dict)
+  ktg_data_df.drop(['eo'], axis=1, inplace=True)
   ktg_data_df.to_csv('output_data/ktg_data_df.csv', index = False, decimal = ",")
 
   ##########################################
  
-  full_eo_list_for_merge = full_eo_list.loc[:,['eo_code', 'level_1_description', 'eo_class_description','eo_model_name', 'eo_description']]
+  
 
 
   
@@ -304,8 +309,10 @@ def update_maintanance_jobs_df():
     
 
 def maintanance_jobs_df_short_prepare():    
-  maintanance_jobs_df = pd.read_csv('temp_files/maintanance_jobs_df.csv', decimal=",")
-  # maintanance_jobs_df = yad.maintanance_jobs_df_download()
+  # maintanance_jobs_df = pd.read_csv('temp_files/maintanance_jobs_df.csv', decimal=",", low_memory=False)
+  # yad.delete_file('temp_files/maintanance_jobs_df.csv')
+  maintanance_jobs_df = yad.maintanance_jobs_df_download()
+  
   # print(maintanance_jobs_df.info())
   
   maintanance_jobs_df_short = maintanance_jobs_df.loc[:, ['level_1_description','eo_class_description', 'eo_model_name','eo_description', 'eo_code', 'maintanance_category_id', 'maintanance_name', 'interval_motohours','maintanance_start_datetime','maintanance_finish_datetime','downtime','man_hours','motohours_value', 'year', 'month', 'year_of_operation']]
@@ -322,6 +329,12 @@ def maintanance_jobs_df_short_prepare():
   maintanance_jobs_df_short['man_hours'] = maintanance_jobs_df_short['man_hours'].astype(float)
   maintanance_jobs_df_short['year_of_operation'] = maintanance_jobs_df_short['year_of_operation'].astype(int)
   
+  maintanance_jobs_df_short.to_csv('temp_files/maintanance_jobs_short.csv', decimal=",")
+  yad.upload_file('temp_files/maintanance_jobs_short.csv', 'maintanance_jobs_short.csv')
+  print("maintanance_jobs_short.csv выгружен в yad")
+  yad.delete_file('temp_files/maintanance_jobs_short.csv')
+  print("maintanance_jobs_short.csv удален из temp_files")
+  
   maintanance_jobs_df_short_renamed = maintanance_jobs_df_short.rename(columns=initial_values.rename_columns_dict)
   
 
@@ -329,7 +342,8 @@ def maintanance_jobs_df_short_prepare():
   
   
   print("output_data/maintanance_jobs_df_short.csv записан")
-
+  func_fleet_avg_age.avg_age_calculation()
+  print('средний возраст рассчитан')
   
   return maintanance_jobs_df_short
 
@@ -338,7 +352,7 @@ def number_of_eo_by_years():
     # yad_file_name = "maintanance_jobs_df.csv"
     # yad.get_file(yad_file_name)
     # maintanance_jobs_df= pd.read_csv("temp_files/df.csv", decimal = ",", low_memory=False)
-    maintanance_jobs_df= pd.read_csv("temp_files/maintanance_jobs_df.csv", decimal = ",", low_memory=False)
+    maintanance_jobs_df= pd.read_csv("output_data/sac_report_maintanance_jobs.csv", decimal = ",", low_memory=False)
   
     maintanance_jobs_df['count'] = 1
     # print("maintanance_jobs_df_yad прочитан")
@@ -347,6 +361,8 @@ def number_of_eo_by_years():
     # print("maintanance_jobs_df_yad удален")
   except Exception as e:
     print("в def number_of_eo_by_years() не удалось загрузить maintanance_jobs_df", e)
+
+  maintanance_jobs_df = maintanance_jobs_df.rename(columns = {"БЕ":'level_1_description',"Класс ЕО":'eo_class_description', "Модель ЕО":'eo_model_name',"Год":'year', "Месяц":'month', "ЕО":'eo_code'})
   
   groupped_maintanance_jobs_df = maintanance_jobs_df.groupby(['level_1_description','eo_class_description', 'eo_model_name','year', 'month', 'eo_code'], as_index = False)[['count']].max()
   groupped_maintanance_jobs_df.to_csv('temp_files/groupped_maintanance_jobs_df.csv')
@@ -388,5 +404,5 @@ def zip():
 # update_ktg_data_df() 
 # update_maintanance_jobs_df()
 # yad.delete_file('temp_files/maintanance_jobs_df.csv')
-# maintanance_jobs_df_short_prepare()
-number_of_eo_by_years()
+maintanance_jobs_df_short_prepare()
+# number_of_eo_by_years()
