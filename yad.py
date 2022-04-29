@@ -20,7 +20,7 @@ def upload_file(file_path, file_name):
     print('не получилось upload_file ', file_name, " Ошибка: ", e)
 
 
-# upload_file('temp_files/df.csv', 'full_eo_list_actual.csv')
+# upload_file('temp_files/full_eo_list_actual.csv', 'full_eo_list_actual.csv')
 # upload_file('output_data/ktg_data_df.csv', 'ktg_data_df.csv')
 # upload_file('output_data/sac_report_maintanance_jobs.csv', 'sac_report_maintanance_jobs.csv')
     
@@ -41,9 +41,11 @@ def get_file(file_name):
     print("не получилось get_file", e)
 
 # get_file("maintanance_jobs_df.csv")
-# get_file("full_eo_list_actual.csv")
+get_file("full_eo_list_actual.csv")
 # get_file("ktg_data_df.csv")
-
+# get_file("sac_report_maintanance_jobs.csv")
+    
+    
 # df = pd.read_csv('temp_files/df.csv')
 # print(df.info())
 

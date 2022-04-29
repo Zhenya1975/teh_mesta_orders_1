@@ -21,7 +21,7 @@ def full_eo_list_actual_func():
   # aws_files.delete_file()
   yad.get_file("full_eo_list_actual.csv")
   full_eo_list_actual = pd.read_csv('temp_files/df.csv', dtype=str)
-  yad.delete_file('temp_files/df.csv')
+  # yad.delete_file('temp_files/df.csv')
   # level_1_df = pd.read_csv("data/level_1.csv", dtype=str)
   # full_eo_list_actual = pd.merge(full_eo_list_actual, level_1_df, on = 'level_1', how = 'left')
   full_eo_list_actual["operation_start_date"] = pd.to_datetime(full_eo_list_actual["operation_start_date"])
